@@ -14,6 +14,18 @@ class SingleQueueBlock(CrashBaseClass):
     __types__ = [ 'struct request' ]
 
     @export
+    def requests_in_flight(self, queue):
+        """
+        Report how many requests are in flight for this queue
+
+        This method returns a 2-tuple of ints.  The first value
+        is the number of read requests in flight.  The second
+        value is the number of write requests in flight.
+        """
+        return (int(queue['in_flight'][0]),
+                int(queue['in_flight'][1]))
+
+    @export
     def for_each_request_in_queue(self, queue):
         """
         Iterates over each struct request in request_queue
