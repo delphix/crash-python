@@ -118,6 +118,15 @@ set prompt py-crash>
 set height 0
 set print pretty on
 
+file "$KERNEL"
+
+python
+from kdump.target import Target
+target = Target(debug=False)
+end
+
+target kdumpfile $VMCORE
+
 python
 import sys
 import traceback
@@ -129,8 +138,8 @@ except RuntimeError as e:
     sys.exit(1)
 path = "$SEARCHDIRS".split(' ')
 try:
-   x = crash.session.Session("$KERNEL", "$VMCORE", "$ZKERNEL", path)
-   print("The 'pyhelp' command will list the command extensions.")
+    x = crash.session.Session(path)
+    print("The 'pyhelp' command will list the command extensions.")
 except gdb.error as e:
     print("crash-python: {}, exiting".format(str(e)), file=sys.stderr)
     traceback.print_exc()
@@ -140,6 +149,9 @@ except RuntimeError as e:
           file=sys.stderr)
     traceback.print_exc()
     sys.exit(1)
+
+target.unregister()
+del target
 EOF
 
 # This is how we debug gdb problems when running crash
