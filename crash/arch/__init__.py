@@ -40,6 +40,7 @@ class KernelAddressIterator(object):
     def __init__(self, ii, address):
         self.input_iterator = ii
         self.address = address
+        self.elided_names = [ "__schedule", "context_switch" ]
 
     def __iter__(self):
         return self
@@ -47,10 +48,36 @@ class KernelAddressIterator(object):
     def __next__(self):
         frame = next(self.input_iterator)
 
-        if frame.inferior_frame().pc() < self.address:
+        pc = frame.inferior_frame().pc()
+
+        if pc < self.address:
             raise StopIteration
 
-        return frame
+        elided_frame = []
+
+        while pc > self.address:
+            name = str(frame.inferior_frame().name())
+            if name in self.elided_names:
+                elided_frame.append(frame)
+            else:
+                break
+            frame = next(self.input_iterator)
+            pc = frame.inferior_frame().pc()
+
+        if len(elided_frame) > 0:
+            return KernelFrameDecorator(frame, elided_frame)
+        elif pc < self.address:
+            raise StopIteration
+        else:
+            return frame
+
+class KernelFrameDecorator(gdb.FrameDecorator.FrameDecorator):
+    def __init__(self, processed_frame, elided_frames):
+        super(KernelFrameDecorator, self).__init__(processed_frame)
+        self.elided_frames = elided_frames
+
+    def elided(self):
+        return self.elided_frames
 
 architectures = {}
 def register(arch):
