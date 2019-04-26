@@ -18,7 +18,7 @@ END
 exit 1
 }
 
-TEMP=$(getopt -o 'd:h' --long 'search-dir:,gdb,valgrind,nofiles,help' -n "$(basename $0)" -- "$@")
+TEMP=$(getopt -o 'd:m:D:h' --long 'modules-debuginfo:,modules:,vmlinux-debuginfo:,gdb,valgrind,nofiles,help' -n "$(basename $0)" -- "$@")
 
 if [ $? -ne 0 ]; then
     echo "Terminating." >&2
@@ -112,6 +112,7 @@ fi
 
 VMCORE=$2
 cat << EOF >> $GDBINIT
+set debug-file-directory $PWD/kroot/usr/lib/debug:/usr/lib/debug
 set build-id-verbose 0
 set python print-stack full
 set prompt py-crash> 
