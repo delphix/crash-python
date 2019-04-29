@@ -13,13 +13,15 @@ def get_value(symname):
     if sym[0]:
         return sym[0].value()
 
+# This is pretty painful.  These are all #defines so none of them end
+# up with symbols in the kernel.  The best approximation we have is
+# task_state_array which doesn't include all of them.  All we can do
+# is make some assumptions based on the changes upstream.  This will
+# be fragile.
 class TaskStateFlags(CrashBaseClass):
     __types__ = [ 'char *', 'struct task_struct' ]
     __symvals__ = [ 'task_state_array' ]
     __symbol_callbacks__ = [ ('task_state_array', 'task_state_flags_callback') ]
-    __delayed_values__ = [ 'TASK_RUNNING', 'TASK_INTERRUPTIBLE',
-                           'TASK_UNINTERRUPTIBLE', 'TASK_ZOMBIE',
-                           'TASK_STOPPED', 'TASK_SWAPPING', 'TASK_EXCLUSIVE' ]
 
     @classmethod
     def task_state_flags_callback(cls, symbol):
@@ -34,28 +36,74 @@ class TaskStateFlags(CrashBaseClass):
                 '(disk sleep)'   : 'TASK_UNINTERRUPTIBLE',
                 '(stopped)'      : 'TASK_STOPPED',
                 '(zombie)'       : 'TASK_ZOMBIE',
-                #'(dead)'        : 'TASK_DEAD',
+                'x (dead)'       : 'TASK_DEAD',
+                'X (dead)'       : 'EXIT_DEAD',
                 '(swapping)'     : 'TASK_SWAPPING',
-                #'(tracing stop)' : 'TASK_TRACING_STOPPED',
+                '(tracing stop)' : 'TASK_TRACING_STOPPED',
                 '(wakekill)'     : 'TASK_WAKEKILL',
                 '(waking)'       : 'TASK_WAKING',
+                '(parked)'       : 'TASK_PARKED',
+                '(idle)'         : '__TASK_IDLE',
             }
 
             for key in state_strings:
                 if key in state:
-                    try:
-                        dv = get_delayed_lookup(cls, state_strings[key])
-                        dv.callback(bit)
-                    except KeyError:
-                        setattr(cls, state_strings[key], bit)
-                if '(dead)' in state:
-                    cls.TASK_DEAD = bit
-                if '(tracing stop)' in state:
-                    cls.TASK_TRACING_STOPPED = bit
+                    setattr(cls, state_strings[key], bit)
+
             if bit == 0:
                 bit = 1
             else:
                 bit <<= 1
+
+        # Linux 4.14 re-introduced TASK_PARKED into task_state_array
+        # which renumbered some bits
+        if hasattr(cls, 'TASK_PARKED') and not hasattr(cls, 'TASK_DEAD'):
+            newbits = cls.TASK_PARKED << 1
+            cls.TASK_DEAD = newbits
+            cls.TASK_WAKEKILL = newbits << 1
+            cls.TASK_WAKING = newbits << 2
+            cls.TASK_NOLOAD = newbits << 3
+            cls.TASK_NEW = newbits << 4
+
+            assert(cls.TASK_PARKED   == 0x0040)
+            assert(cls.TASK_DEAD     == 0x0080)
+            assert(cls.TASK_WAKEKILL == 0x0100)
+            assert(cls.TASK_WAKING   == 0x0200)
+
+        # Linux 3.14 removed several elements from task_state_array
+        # so we'll have to make some assumptions.
+        # TASK_NOLOAD wasn't introduced until 4.2 and wasn't added
+        # to task_state_array until v4.14.  There's no way to
+        # detect whether the use of the flag is valid for a particular
+        # kernel release.
+        elif not hasattr(cls, 'TASK_DEAD'):
+            if cls.EXIT_ZOMBIE > cls.EXIT_DEAD:
+                newbits = cls.EXIT_ZOMBIE << 1
+            else:
+                newbits = cls.EXIT_DEAD << 1
+            cls.TASK_DEAD = newbits
+            cls.TASK_WAKEKILL = newbits << 1
+            cls.TASK_WAKING = newbits << 2
+            cls.TASK_NOLOAD = newbits << 3
+            cls.TASK_NEW = newbits << 4
+
+            assert(cls.TASK_DEAD     == 0x0040)
+            assert(cls.TASK_WAKEKILL == 0x0080)
+            assert(cls.TASK_WAKING   == 0x0100)
+            assert(cls.TASK_PARKED   == 0x0200)
+        else:
+            assert(cls.TASK_DEAD     == 64)
+            assert(cls.TASK_WAKEKILL == 128)
+            assert(cls.TASK_WAKING   == 256)
+            assert(cls.TASK_PARKED   == 512)
+
+        if hasattr(cls, 'TASK_NOLOAD'):
+            assert(cls.TASK_NOLOAD == 1024)
+            cls.TASK_IDLE = cls.TASK_NOLOAD | cls.TASK_UNINTERRUPTIBLE
+            assert(cls.TASK_IDLE == 1026)
+        if hasattr(cls, 'TASK_NEW'):
+            assert(cls.TASK_NEW == 2048)
+
         cls.check_state_bits()
 
     @classmethod
