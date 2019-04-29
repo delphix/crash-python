@@ -98,6 +98,15 @@ class TypesUtilClass(CrashBaseClass):
 
     @export
     @staticmethod
+    def struct_has_member(gdbtype, name):
+        try:
+            x = TypesUtilClass.offsetof(gdbtype, name)
+            return True
+        except InvalidComponentError:
+            return False
+
+    @export
+    @staticmethod
     def get_symbol_value(symname, block=None, domain=None):
         """
         Returns the value associated with a named symbol
