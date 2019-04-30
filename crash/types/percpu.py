@@ -265,3 +265,22 @@ class TypesPerCPUClass(CrashBaseClass):
         if var is None or not self.is_percpu_var(var):
             raise TypeError("Argument {} does not correspond to a percpu pointer.".format(orig_var))
         return self.get_percpu_var_nocheck(var, cpu, is_symbol, nr_cpus)
+
+    @export
+    def percpu_counter_sum(self, var):
+        if isinstance(var, gdb.Symbol):
+            var = var.value()
+
+        if not (var.type == self.percpu_counter_type or
+                (var.type.code == gdb.TYPE_CODE_PTR and
+                 var.type.target() == self.percpu_counter_type)):
+            raise TypeError("var must be gdb.Symbol or gdb.Value describing `{}' not `{}'"
+                                .format(self.percpu_counter_type, var.type))
+
+        total = int(var['count'])
+
+        v = get_percpu_var(var['counters'])
+        for cpu in v:
+            total += int(v[cpu])
+
+        return total
