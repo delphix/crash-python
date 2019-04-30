@@ -92,7 +92,7 @@ class TypesBitmapClass(CrashBaseClass):
 
     @export
     @classmethod
-    def find_first_set_bit(cls, bitmap, size_in_bytes=None):
+    def find_next_zero_bit(cls, bitmap, start, size_in_bytes=None):
         cls.check_bitmap_type(bitmap)
 
         if size_in_bytes is None:
@@ -100,15 +100,75 @@ class TypesBitmapClass(CrashBaseClass):
 
         elements = size_in_bytes // cls.unsigned_long_type.sizeof
 
-        for n in range(0, elements):
+        if start > size_in_bytes << 3:
+            raise IndexError("Element {} is out of range ({} elements)"
+                                                    .format(start, elements))
+
+        element = start // (cls.unsigned_long_type.sizeof << 3)
+        offset = start % (cls.unsigned_long_type.sizeof << 3)
+
+        for n in range(element, elements):
+            item = ~bitmap[n]
+            if item == 0:
+                continue
+
+            if offset > 0:
+                item &= ~((1 << offset) - 1)
+
+            v = cls._find_first_set_bit(item)
+            if v > 0:
+                ret = n * (cls.unsigned_long_type.sizeof << 3) + v
+                assert(ret >= start)
+                return ret
+
+            offset = 0
+
+        return 0
+
+    @export
+    @classmethod
+    def find_first_zero_bit(cls, bitmap, size_in_bytes=None):
+        return cls.find_next_zero_bit(bitmap, 0, size_in_bytes)
+
+    @export
+    @classmethod
+    def find_next_set_bit(cls, bitmap, start, size_in_bytes=None):
+        cls.check_bitmap_type(bitmap)
+
+        if size_in_bytes is None:
+            size_in_bytes = bitmap.type.sizeof
+
+        elements = size_in_bytes // cls.unsigned_long_type.sizeof
+
+        if start > size_in_bytes << 3:
+            raise IndexError("Element {} is out of range ({} elements)"
+                                                    .format(start, elements))
+
+        element = start // (cls.unsigned_long_type.sizeof << 3)
+        offset = start % (cls.unsigned_long_type.sizeof << 3)
+
+        for n in range(element, elements):
             if bitmap[n] == 0:
                 continue
 
-            v = cls._find_first_set_bit(bitmap[n])
+            item = bitmap[n]
+            if offset > 0:
+                item &= ~((1 << offset) - 1)
+
+            v = cls._find_first_set_bit(item)
             if v > 0:
-                return n * (cls.unsigned_long_type.sizeof << 3) + v
+                ret = n * (cls.unsigned_long_type.sizeof << 3) + v
+                assert(ret >= start)
+                return ret
+
+            offset = 0
 
         return 0
+
+    @export
+    @classmethod
+    def find_first_set_bit(cls, bitmap, size_in_bytes=None):
+        return cls.find_next_set_bit(bitmap, 0, size_in_bytes)
 
     @classmethod
     def _find_last_set_bit(cls, val):
