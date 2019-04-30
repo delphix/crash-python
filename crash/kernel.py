@@ -113,8 +113,10 @@ class CrashKernel(CrashBaseClass):
         except Exception as e:
             print(e)
 
-    def for_each_module(self):
-        for module in list_for_each_entry(self.modules, self.module_type,
+    @export
+    @classmethod
+    def for_each_module(cls):
+        for module in list_for_each_entry(cls.modules, cls.module_type,
                                           'list'):
             yield module
 
