@@ -30,11 +30,22 @@ unset TEMP
 
 while true; do
     case "$1" in
-        '-d'|'--search-dir')
-            SEARCHDIRS="$SEARCHDIRS $2"
+        '-m'|'--modules')
+            MODULES="$MODULES $2"
             shift 2
             continue
         ;;
+        '-d'|'--modules-debuginfo')
+            MODULES_DEBUGINFO="$MODULES_DEBUGINFO $2"
+            shift 2
+            continue
+        ;;
+        '-D'|'--vmlinux-debuginfo')
+            VMLINUX_DEBUGINFO="$VMLINUX_DEBUGINFO $2"
+            shift 2
+            continue
+        ;;
+
         '--gdb')
             DEBUGMODE=gdb
             shift
@@ -137,9 +148,26 @@ except RuntimeError as e:
     print("crash-python: {}, exiting".format(str(e)), file=sys.stderr)
     traceback.print_exc()
     sys.exit(1)
-path = "$SEARCHDIRS".split(' ')
+
+modules = None
+modules_debuginfo = None
+vmlinux_debuginfo = None
+
+
+s = "$VMLINUX_DEBUGINFO"
+if len(s) > 0:
+    vmlinux_debuginfo = s.split(" ")
+
+s = "$MODULES"
+if len(s) > 0:
+    modules = s.split(" ")
+
+s = "$MODULES_DEBUGINFO"
+if len(s) > 0:
+    modules_debuginfo = s.split(" ")
+
 try:
-    x = crash.session.Session(path)
+    x = crash.session.Session(vmlinux_debuginfo, modules, modules_debuginfo)
     print("The 'pyhelp' command will list the command extensions.")
 except gdb.error as e:
     print("crash-python: {}, exiting".format(str(e)), file=sys.stderr)
