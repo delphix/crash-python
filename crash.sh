@@ -1,6 +1,10 @@
 #!/bin/bash
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
+export PYTHONPATH="/usr/local/lib/python3.6/site-packages:$PYTHONPATH"
+export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+export PATH="/usr/local/bin:$PATH"
+
 usage() {
 cat <<END >&2
 usage: $(basename $0) [-d|--search-dir <debuginfo/module dir>] <vmlinux> <vmcore>
