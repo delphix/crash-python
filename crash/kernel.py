@@ -108,9 +108,15 @@ class CrashKernel(CrashBaseClass):
                     sections += " -s .data..percpu {:#x}".format(percpu)
                     add_module_percpu_range(percpu, int(module['percpu_size']))
 
-                gdb.execute("add-symbol-file {} {:#x} {}"
-                            .format(modpath, addr, sections),
-                            to_string=True)
+                try:
+                    result = gdb.execute("add-symbol-file {} {:#x} {}"
+                                            .format(modpath, addr, sections),
+                                         to_string=True)
+                except gdb.error as e:
+                    raise CrashKernelError("Error while loading module `{}': {}"
+                                           .format(modname, str(e)))
+                if debug:
+                    print(result)
 
                 objfile = gdb.lookup_objfile(modpath)
                 if not objfile.has_symbols():
