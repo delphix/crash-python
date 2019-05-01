@@ -9,7 +9,7 @@ import crash.arch.x86_64
 import crash.arch.ppc64
 from crash.infra import CrashBaseClass, export
 from crash.types.list import list_for_each_entry
-from crash.types.percpu import get_percpu_var
+from crash.types.percpu import get_percpu_var, add_module_percpu_range
 from crash.types.list import list_for_each_entry
 import crash.cache.tasks
 from crash.types.task import LinuxTask
@@ -102,6 +102,12 @@ class CrashKernel(CrashBaseClass):
                     sys.stdout.flush()
 
                 sections = self.get_module_sections(module)
+
+                percpu = int(module['percpu'])
+                if percpu > 0:
+                    sections += " -s .data..percpu {:#x}".format(percpu)
+                    add_module_percpu_range(percpu, int(module['percpu_size']))
+
                 gdb.execute("add-symbol-file {} {:#x} {}"
                             .format(modpath, addr, sections),
                             to_string=True)
