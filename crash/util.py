@@ -2,6 +2,8 @@
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
 import gdb
+import uuid
+
 from crash.infra import CrashBaseClass, export
 from crash.exceptions import MissingTypeError, MissingSymbolError
 
@@ -66,7 +68,7 @@ class _InvalidComponentNameError(_InvalidComponentBaseError):
         self.type = gdbtype
 
 class TypesUtilClass(CrashBaseClass):
-    __types__ = [ 'char *' ]
+    __types__ = [ 'char *', 'uuid_t' ]
 
     @export
     def container_of(self, val, gdbtype, member):
@@ -385,3 +387,32 @@ class TypesUtilClass(CrashBaseClass):
         size = array_size(value)
         for i in range(array_size(value)):
             yield value[i]
+
+    @export
+    @classmethod
+    def decode_uuid(cls, value):
+        if not isinstance(value, gdb.Value):
+            raise TypeError("value must be gdb.Value")
+
+        if value.type.code != gdb.TYPE_CODE_ARRAY or value.type.sizeof != 16:
+            raise TypeError("value must describe an array of 16 bytes")
+
+        u = 0
+        for i in range(0, 16):
+            u <<= 8
+            u += int(value[i])
+
+        return uuid.UUID(int=u)
+
+    @export
+    @classmethod
+    def decode_uuid_t(cls, value):
+        if not isinstance(value, gdb.Value):
+            raise TypeError("value must be gdb.Value")
+
+        if 'b' in cls.uuid_t_type:
+            member = 'b'
+        else:
+            member = '__u_bits'
+
+        return cls.decode_uuid(value[member])
