@@ -242,6 +242,9 @@ class TypesPerCPUClass(CrashBaseClass):
                     addr += self.kaslr_offset
 
         vartype = var.type
+        if (vartype.code == gdb.TYPE_CODE_PTR and
+            vartype.target().code == gdb.TYPE_CODE_VOID):
+            vartype = self.char_p_type
         return addr.cast(vartype).dereference()
 
     @export
