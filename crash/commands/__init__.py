@@ -54,7 +54,16 @@ class CrashCommand(CrashBaseClass, gdb.Command):
 def discover():
     modules = glob.glob(os.path.dirname(__file__)+"/[A-Za-z]*.py")
     __all__ = [os.path.basename(f)[:-3] for f in modules]
-
     mods = __all__
     for mod in mods:
         x = importlib.import_module("crash.commands.{}".format(mod))
+
+    subdirs = glob.glob(os.path.dirname(__file__)+"/*/")
+    for subdir in subdirs:
+        modules = glob.glob(os.path.dirname(__file__)+"/"+subdir+"/'[A-Za-z]*.py")
+        __all__ = [os.path.basename(f)[:-3] for f in modules]
+
+        mods = __all__
+        for mod in mods:
+            x = importlib.import_module("crash.commands.{}.{}".format(subdir,mod))
+        
