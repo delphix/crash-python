@@ -26,46 +26,28 @@ from typing import Callable, Any
 # the Spa() class will generate `> spa`, not `> pyspa`)
 #
 
-def symbol_address(symbol):
-    global_s = gdb.lookup_global_symbol(symbol)
-    if global_s != None:
-        return int(global_s.value().address)
-    s = gdb.lookup_symbol(symbol)[0]
-    if s != None:
-        return int(s.value().address)
-    return 0
-
-def gen(tname, addr):
-    return gdb.parse_and_eval('*({} *){}'.format(tname, hex(addr)))
-
-def walk_avl_aux(addr, offset, cb):
-    if addr == 0:
-        return
-    node = gen('avl_node_t', addr)
-    lchild = int(node['avl_child'][0])
-    rchild = int(node['avl_child'][1])
-    walk_avl_aux(lchild, offset, cb)
-    cb(addr - offset)
-    walk_avl_aux(rchild, offset, cb)
-
-def walk_avl(addr, cb):
-    avl = gen('avl_tree_t', addr)
-    root = int(avl['avl_root'])
-    offset = int(avl['avl_offset'])
-    walk_avl_aux(root, offset, cb)
+def symbol_address(symbol, typename="void"):
+    type = gdb.lookup_type(typename).pointer()
+    sym = gdb.lookup_global_symbol(symbol)
+    if sym == None:
+        sym = gdb.lookup_symbol(symbol)[0]
+    if sym != None:
+        return sym.value().address.cast(type)
+    return None
 
 class Spa(gdb.Command):
     def __init__(self):
         super(Spa, self).__init__("spa", gdb.COMMAND_DATA)
 
-    def print_spa(addr):
-        spa = gen('spa_t', addr)
-        print("{:14} {}".format(hex(addr), spa['spa_name'].string()))
+    def print_spa(spa):
+        print("{:14} {}".format(hex(spa), spa['spa_name'].string()))
 
     def invoke(self, arg, from_tty):
         print("{:14} {}".format("ADDR", "NAME"))
         print("----------------------------------------")
-        walk_avl(symbol_address("spa_namespace_avl"), Spa.print_spa)
+        for spa in Avl.walk(symbol_address("spa_namespace_avl"), gdb.lookup_type('struct spa').pointer()):
+            Spa.print_spa(spa)
+	
 Spa()
 
 import datetime,getopt
@@ -82,16 +64,6 @@ def offsetof(name : str, field_name : str) -> int:
         return field.bitpos / 8
     return -1
 
-def walk_list(addr: int, cb : Callable[[int, Any], None], arg : Any) -> None:
-    lis = gen('list_t', addr)
-    head = int(lis['list_head']['next'])
-    offset = int(lis['list_offset'])
-    node = head
-    while node != 0 and node != int(lis['list_head'].address):
-        cb(node - offset, arg)
-        node_fields = gen('list_node_t', node)
-        node = int(node_fields['next'])
-
 class ZfsDbgmsgArg():
     ts : bool= False
     addr : bool = False
@@ -103,16 +75,16 @@ class ZfsDbgmsg(gdb.Command):
     def __init__(self):
         super(ZfsDbgmsg, self).__init__("zfs_dbgmsg", gdb.COMMAND_DATA)
 
-    def print_msg(addr : int, arg : ZfsDbgmsgArg) -> None:
-        msg = gen('zfs_dbgmsg_t', addr)
-        strlen = int(msg['zdm_size']) - sizeof('zfs_dbgmsg_t')
+    # node is a zfs_dbgmsg_t*
+    def print_msg(node : gdb.Value, arg : ZfsDbgmsgArg) -> None:
+        strlen = int(node['zdm_size']) - node.type.target().sizeof
         if arg.addr:
-            print("{} ".format(hex(addr)), end="")
+            print("{} ".format(hex(node)), end="")
         if arg.ts:
-            timestamp = datetime.datetime.fromtimestamp(int(msg['zdm_timestamp']))
+            timestamp = datetime.datetime.fromtimestamp(int(node['zdm_timestamp']))
             print("{}: ".format(timestamp.strftime('%Y-%m-%dT%H:%M:%S')), end="")
 
-        print("{}\n".format(msg['zdm_msg'].string(encoding='utf-8', length=strlen)))
+        print("{}".format(node['zdm_msg'].string(encoding='utf-8', length=strlen)))
 
     def invoke(self, arg : str, from_tty : Any) -> None:
         print(arg)
@@ -131,11 +103,42 @@ class ZfsDbgmsg(gdb.Command):
             verbosity += 1
 
         zda = ZfsDbgmsgArg(verbosity >= 1, verbosity >= 2)
-        proc_list = gen('procfs_list_t', symbol_address("zfs_dbgmsgs"))
-        list_addr = int(proc_list['pl_list'].address)
-        walk_list(list_addr, ZfsDbgmsg.print_msg, zda)
+        proc_list = symbol_address("zfs_dbgmsgs", "procfs_list_t")
+        list_addr = proc_list['pl_list'].address
+        for node in List.walk(list_addr, gdb.lookup_type('struct zfs_dbgmsg').pointer()):
+            ZfsDbgmsg.print_msg(node, zda)
 
 ZfsDbgmsg()
+
+class List(gdb.Command):
+    """ walk list """
+
+    def __init__(self):
+        super(List, self).__init__('list', gdb.COMMAND_DATA)
+
+    def walk(list, type=gdb.lookup_type('void').pointer()):
+        # XXX if tree is typed, verify that it's the expected type,
+        # otherwise cast?
+
+        assert type.code == gdb.TYPE_CODE_PTR
+
+        list_type = gdb.lookup_type('struct list').pointer()
+        typed_list = list.cast(list_type)
+        offset = int(typed_list.dereference()['list_offset'])
+        first_node = typed_list['list_head'].address
+        node = first_node['next']
+        while node != first_node:
+            yield gdb.Value(int(node) - offset).cast(type)
+            node = node['next']
+
+    def invoke(self, argstr, from_tty):
+        parser = argparse.ArgumentParser(prog='list')
+        parser.add_argument('addr')
+        args = parser.parse_args(gdb.string_to_argv(argstr))
+        for node in List.walk(gdb.Value(int(args.addr, 0))):
+            print(node)
+
+List()
 
 class Avl(gdb.Command):
     """ walk avl tree """
@@ -143,26 +146,34 @@ class Avl(gdb.Command):
     def __init__(self):
         super(Avl, self).__init__('avl', gdb.COMMAND_DATA)
 
-    def helper(node, offset):
+    def walk(tree, type=gdb.lookup_type('void').pointer()):
+        # XXX if tree is typed, verify that it's the expected type,
+        # otherwise cast?
+
+        assert type.code == gdb.TYPE_CODE_PTR
+
+        avl_tree_type = gdb.lookup_type('struct avl_tree').pointer()
+        typed_tree = tree.cast(avl_tree_type)
+        offset = int(typed_tree.dereference()['avl_offset'])
+        root = typed_tree['avl_root']
+        yield from Avl.helper(root, offset, type)
+
+    def helper(node, offset, type):
         if node == 0:
             return
         lchild = node.dereference()['avl_child'][0]
-        Avl.helper(lchild, offset)
-        print(hex(int(node) - offset))
-        rchild = node.dereference()['avl_child'][1]
-        Avl.helper(rchild, offset)
+        yield from Avl.helper(lchild, offset, type)
 
-    def execute(self, args):
-        addr = gdb.Value(int(args.addr, 0))
-        avl_tree_type = gdb.lookup_type('struct avl_tree')
-        tree = addr.cast(avl_tree_type.pointer())
-        offset = int(tree.dereference()['avl_offset'])
-        root = tree['avl_root']
-        Avl.helper(root, offset)
+        yield gdb.Value(int(node) - offset).cast(type)
+
+        rchild = node.dereference()['avl_child'][1]
+        yield from Avl.helper(rchild, offset, type)
 
     def invoke(self, argstr, from_tty):
         parser = argparse.ArgumentParser(prog='avl')
         parser.add_argument('addr')
-        Avl.execute(self, parser.parse_args(gdb.string_to_argv(argstr)))
+        args = parser.parse_args(gdb.string_to_argv(argstr))
+        for node in Avl.walk(gdb.Value(int(args.addr, 0))):
+            print(node)
 
 Avl()
