@@ -316,7 +316,13 @@ class KmemCache(CrashBaseClass):
     def check_kmem_cache_type(cls, gdbtype):
         cls.buffer_size_name = find_member_variant(gdbtype, ('buffer_size', 'size'))
         cls.nodelists_name = find_member_variant(gdbtype, ('nodelists', 'node'))
-        cls.percpu_name = find_member_variant(gdbtype, ('cpu_cache', 'array'))
+        #
+        # XXX: Delphix's kernel uses the SLUB, not the SLAB, and the SLUB does
+        #      not have a "cpu_cache" member. This definitely isn't correct,
+        #      but commenting out this line at least prevents GDB from failing
+        #      during initialization.
+        #
+        #cls.percpu_name = find_member_variant(gdbtype, ('cpu_cache', 'array'))
         cls.percpu_cache = bool(cls.percpu_name == 'cpu_cache')
         cls.head_name = find_member_variant(gdbtype, ('next', 'list'))
 
@@ -346,7 +352,13 @@ class KmemCache(CrashBaseClass):
         self.gdb_obj = gdb_obj
         self.array_caches = None
         
-        self.objs_per_slab = int(gdb_obj["num"])
+        #
+        # XXX: Delphix's kernel uses the SLUB, not the SLAB, and the SLUB does
+        #      not have a "num" member. This definitely isn't correct, but
+        #      commenting out this line at least prevents GDB from failing
+        #      during initialization.
+        #
+        #self.objs_per_slab = int(gdb_obj["num"])
         self.buffer_size = int(gdb_obj[KmemCache.buffer_size_name])
 
         if int(gdb_obj["flags"]) & 0x80000000:

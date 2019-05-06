@@ -10,7 +10,12 @@ from crash.types.bitmap import for_each_set_bit
 # functions to iterate over online cpu's etc.
 class TypesCPUClass(CrashBaseClass):
 
-    __symbol_callbacks__ = [ ('cpu_online_mask', 'setup_cpus_mask') ]
+    #
+    # XXX: Delphix's kernel doesn't have a "cpu_online_mask" symbol, but it
+    #      does have a "__cpu_online_mask" symbol. While I don't know if this
+    #      is correct, it appears to be, and allows us to use "pykmem -z".
+    #
+    __symbol_callbacks__ = [ ('__cpu_online_mask', 'setup_cpus_mask') ]
 
     cpus_online = None
 
