@@ -2,6 +2,7 @@
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
 import gdb
+import argparse
 from typing import Callable, Any
 
 #
@@ -135,3 +136,33 @@ class ZfsDbgmsg(gdb.Command):
         walk_list(list_addr, ZfsDbgmsg.print_msg, zda)
 
 ZfsDbgmsg()
+
+class Avl(gdb.Command):
+    """ walk avl tree """
+
+    def __init__(self):
+        super(Avl, self).__init__('avl', gdb.COMMAND_DATA)
+
+    def helper(node, offset):
+        if node == 0:
+            return
+        lchild = node.dereference()['avl_child'][0]
+        Avl.helper(lchild, offset)
+        print(hex(int(node) - offset))
+        rchild = node.dereference()['avl_child'][1]
+        Avl.helper(rchild, offset)
+
+    def execute(self, args):
+        addr = gdb.Value(int(args.addr, 0))
+        avl_tree_type = gdb.lookup_type('struct avl_tree')
+        tree = addr.cast(avl_tree_type.pointer())
+        offset = int(tree.dereference()['avl_offset'])
+        root = tree['avl_root']
+        Avl.helper(root, offset)
+
+    def invoke(self, argstr, from_tty):
+        parser = argparse.ArgumentParser(prog='avl')
+        parser.add_argument('addr')
+        Avl.execute(self, parser.parse_args(gdb.string_to_argv(argstr)))
+
+Avl()
