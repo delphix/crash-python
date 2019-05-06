@@ -3,7 +3,7 @@
 
 import gdb
 import argparse
-from .List import List
+from crash.commands.zfs.List import List
 
 class MultiList(gdb.Command):
     """ walk multilist """

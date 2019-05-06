@@ -3,8 +3,8 @@
 
 import gdb
 from typing import Callable, Any
-from .zfs_util import symbol_address
-from .List import List
+from crash.commands.zfs.zfs_util import symbol_address
+from crash.commands.zfs.List import List
 import datetime,getopt
 
 class ZfsDbgmsgArg():

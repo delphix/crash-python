@@ -4,8 +4,8 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from .zfs_util import symbol_address
-from .Avl import Avl
+from crash.commands.zfs.zfs_util import symbol_address
+from crash.commands.zfs.Avl import Avl
 
 class Spa(gdb.Command):
     def __init__(self):
