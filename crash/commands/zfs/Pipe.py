@@ -14,7 +14,7 @@ class PipeableCommand():
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
 
     # subclass must override
-    # must be overridden by a generator, i.e. it must use `yield`
+    # subclass must override this, typically with a generator, i.e. it must use `yield`
     def call(self, input):
         assert "subclass must override"
 
@@ -52,6 +52,53 @@ class PipeList(PipeableCommand):
             yield from PipeList.walk(listaddr, gdb.lookup_type('zfs_dbgmsg_t').pointer())
 
 PipeList("0")
+
+class LineCount(PipeableCommand):
+    def __init__(self, arg=""):
+        super(LineCount, self).__init__('wc')
+    def call(self, input):
+        i = 0
+        for o in input:
+            i += 1
+        yield gdb.Value(i)
+LineCount()
+
+class Head(PipeableCommand):
+    def __init__(self, arg=""):
+        super(Head, self).__init__('head')
+        try:
+            parser = argparse.ArgumentParser(prog='head')
+            parser.add_argument('count', type=int, default=10, nargs='?')
+            self.args = parser.parse_args(gdb.string_to_argv(arg))
+        except:
+            pass
+
+    def call(self, input):
+        for o in input:
+            if self.args.count == 0:
+                break
+            yield o
+            self.args.count -= 1
+Head()
+
+from collections import deque
+class Tail(PipeableCommand):
+    def __init__(self, arg=""):
+        super(Tail, self).__init__('tail')
+        try:
+            parser = argparse.ArgumentParser(prog='tail')
+            parser.add_argument('count', type=int, default=10, nargs='?')
+            self.args = parser.parse_args(gdb.string_to_argv(arg))
+        except:
+            pass
+
+    def call(self, input):
+        q = deque(maxlen=self.args.count)
+        for o in input:
+            q.append(o)
+        for o in q:
+            yield o
+Tail()
 
 class Pipe(gdb.Command):
     """ walk list """
