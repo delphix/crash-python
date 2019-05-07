@@ -4,12 +4,13 @@
 import gdb
 import argparse
 from typing import Callable, Any
+from crash.commands.zfs.Pipe import PipeableCommand
 
-class Avl(gdb.Command):
+class Avl(PipeableCommand):
     """ walk avl tree """
 
     def __init__(self):
-        super(Avl, self).__init__('avl', gdb.COMMAND_DATA)
+        super().__init__('avl')
 
     def walk(tree, type=gdb.lookup_type('void').pointer()):
         # XXX if tree is typed, verify that it's the expected type,
@@ -34,11 +35,8 @@ class Avl(gdb.Command):
         rchild = node.dereference()['avl_child'][1]
         yield from Avl.helper(rchild, offset, type)
 
-    def invoke(self, argstr, from_tty):
-        parser = argparse.ArgumentParser(prog='avl')
-        parser.add_argument('addr')
-        args = parser.parse_args(gdb.string_to_argv(argstr))
-        for node in Avl.walk(gdb.Value(int(args.addr, 0))):
-            print(node)
+    def call(self, input):
+        for treeaddr in input:
+            yield from Avl.walk(treeaddr)
 
 Avl()

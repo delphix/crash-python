@@ -27,19 +27,15 @@ class Cast(PipeableCommand):
 
         try:
             parser = argparse.ArgumentParser(prog='cast')
-            parser.add_argument('cast_type', default='void *', nargs='?')
-            parser.add_argument('addr', default=None, nargs='?')
+            parser.add_argument('cast_type', default=['void', '*'], nargs='*')
             self.args = parser.parse_args(gdb.string_to_argv(arg))
         except:
             pass
 
-        self.args.cast_type = parse_type(self.args.cast_type)
+        self.args.cast_type = parse_type(' '.join(self.args.cast_type))
 
 
     def call(self, input):
-        if isinstance(input, list) and input == [] and self.args.addr is not None:
-            input = [gdb.Value(int(self.args.addr, 0))]
-
         for listaddr in input:
             yield listaddr.cast(self.args.cast_type)
 

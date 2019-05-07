@@ -4,12 +4,13 @@
 import gdb
 import argparse
 from crash.commands.zfs.List import List
+from crash.commands.zfs.Pipe import PipeableCommand
 
-class MultiList(gdb.Command):
+class MultiList(PipeableCommand):
     """ walk multilist """
 
     def __init__(self):
-        super(MultiList, self).__init__('multilist', gdb.COMMAND_DATA)
+        super().__init__('multilist')
 
     def walk(multilist, type=gdb.lookup_type('void').pointer()):
         # XXX if tree is typed, verify that it's the expected type,
@@ -27,12 +28,9 @@ class MultiList(gdb.Command):
             for node in List.walk(sublist, type):
                 yield node
 
-    def invoke(self, argstr, from_tty):
-        parser = argparse.ArgumentParser(prog='multilist')
-        parser.add_argument('addr')
-        args = parser.parse_args(gdb.string_to_argv(argstr))
-        for node in MultiList.walk(gdb.Value(int(args.addr, 0))):
-            print(node)
+    def call(self, input):
+        for listaddr in input:
+            yield from MultiList.walk(listaddr)
 
 MultiList()
 

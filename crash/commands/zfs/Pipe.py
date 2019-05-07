@@ -8,11 +8,29 @@ from typing import Callable, Any
 class PipeableCommand():
     allPipeableCommands = {}
 
-    def __init__(self, cmdname):
+    def __init__(self, cmdname, createGdb=True):
         PipeableCommand.allPipeableCommands[cmdname] = type(self)
         self.islast = False
         rv = self.call([])
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
+
+        if not createGdb:
+            return
+
+        # Now we generate a dynamic dispatch class to invoke our pipeable command if it's invoked directly from gdb
+        def __init__(self2):
+            gdb.Command.__init__(self2, cmdname, gdb.COMMAND_DATA)
+        def invoke(self2, argstr, from_tty):
+            (first, space, last) = argstr.strip().rpartition(' ')
+            inputs = []
+            if len(last) != 0:
+                inputs = [gdb.Value(int(last, 0))]
+
+            for i in type(self)(first).call(inputs):
+                print(i)
+
+        gdbCommandClass = type(cmdname + 'Cmd', (gdb.Command,), {"__init__": __init__, "invoke": invoke})
+        gdbCommandClass()
 
     # subclass must override
     # subclass must override this, typically with a generator, i.e. it must use `yield`
