@@ -112,14 +112,19 @@ class Pipe(gdb.Command):
             yield from pipeline[-1].call(self.iterate(pipeline[:-1]))
 
     def invoke(self, argstr, from_tty):
+        if len(argstr) == 0:
+            print("available commands:")
+            for cmd in sorted (PipeableCommand.allPipeableCommands.keys()):
+                print("    ", cmd)
+            return
+
         split_cmds = [cmd.strip().partition(' ')[0:3:2] for cmd in argstr.split('|')]
         self.input = []
-        if len(split_cmds) > 0:
-            try:
-                self.input = [gdb.Value(int(split_cmds[0][0], 0))]
-                split_cmds = split_cmds[1:]
-            except:
-                pass
+        try:
+            self.input = [gdb.Value(int(split_cmds[0][0], 0))]
+            split_cmds = split_cmds[1:]
+        except:
+            pass
 
         pipeline = []
         for name, arg in split_cmds:
