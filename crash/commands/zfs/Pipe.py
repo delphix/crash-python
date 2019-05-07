@@ -24,7 +24,7 @@ class PipeList(PipeableCommand):
         super(PipeList, self).__init__('list')
         try:
             parser = argparse.ArgumentParser(prog='list')
-            parser.add_argument('addr', default=None)
+            parser.add_argument('addr', default=None, nargs='?')
             self.args = parser.parse_args(gdb.string_to_argv(arg))
         except:
             pass
@@ -51,7 +51,7 @@ class PipeList(PipeableCommand):
         for listaddr in input:
             yield from PipeList.walk(listaddr, gdb.lookup_type('zfs_dbgmsg_t').pointer())
 
-PipeList("0")
+PipeList()
 
 class LineCount(PipeableCommand):
     def __init__(self, arg=""):
@@ -106,18 +106,26 @@ class Pipe(gdb.Command):
     def __init__(self):
         super(Pipe, self).__init__('pipe', gdb.COMMAND_DATA)
 
-    def iterate(pipeline):
+    def iterate(self, pipeline):
         if len(pipeline) == 1:
-            yield from pipeline[0].call([])
+            yield from pipeline[0].call(self.input)
         else:
-            yield from pipeline[-1].call(Pipe.iterate(pipeline[:-1]))
+            yield from pipeline[-1].call(self.iterate(pipeline[:-1]))
 
     def invoke(self, argstr, from_tty):
         split_cmds = [cmd.strip().partition(' ')[0:3:2] for cmd in argstr.split('|')]
+        self.input = []
+        if len(split_cmds) > 0:
+            try:
+                self.input = [gdb.Value(int(split_cmds[0][0], 0))]
+                split_cmds = split_cmds[1:]
+            except:
+                pass
+
         pipeline = []
         for name, arg in split_cmds:
             pipeline.append(PipeableCommand.allPipeableCommands[name](arg))
-        for o in Pipe.iterate(pipeline):
+        for o in self.iterate(pipeline):
             print(o)
 
 Pipe()
