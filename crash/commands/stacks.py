@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-# vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
-
 import gdb
+from crash.commands import CrashCommandParser
+import argparse
 
 #
 # In terms of organization, this file is very different from the
@@ -21,7 +20,10 @@ import gdb
 #
 #
 
-class StackInfo():
+# TODO doc string
+# TODO replace wierd constant used to stop unwinding
+
+class FrameInfo():
     def __init__(self, function, offset, module):
         self.function = function
         self.offset = offset
@@ -30,11 +32,34 @@ class StackInfo():
     def __str__(self):
         return "{0}+{1}".format(self.function, str(self.offset))
 
+class StackInfo():
+    def __init__(self, frames, state, thread_id):
+        self.frames = frames
+        self.state = state
+        self.thread_id = thread_id
+        self.count = 1
+
+    def get_key(self):
+        return self.state + ''.join(str(l) for l in self.frames)
+
+    def pretty_print(self):
+        print("STATE    COUNT   NUM")
+        print("{0}  {1}     {2}".format(self.state, self.count, self.thread_id))
+        print('\n'.join(str(line) for line in self.frames))
+        print("")
+
 class Stacks(gdb.Command):
-    stack_map = {}
+
     def __init__(self):
-        super(Stacks, self).__init__("stacks", gdb.COMMAND_DATA)
-        self.address = 0xffff000000000000;
+        name = "stacks"
+        super(Stacks, self).__init__(name, gdb.COMMAND_DATA)
+        parser = CrashCommandParser(prog=name)
+        parser.add_argument('-m')
+        parser.add_argument('-c')
+        parser.add_argument('-t')
+        parser.add_argument('-f', action='store_true')
+        self.parser = parser
+        self.stack_map = {}
 
     def iterate_threads():
         root = gdb.inferiors()[0]
@@ -42,27 +67,39 @@ class Stacks(gdb.Command):
             thread.switch()
             yield thread
 
-    def insert(lines, state, thread_num):
-        key = state + ''.join(str(l) for l in lines)
-        if (key in Stacks.stack_map):
-            Stacks.stack_map[key][0] += 1
+    def insert(stack_map, frames, state, thread_num):
+        stack_info = StackInfo(frames, state, thread_num)
+        key = stack_info.get_key()
+        if (key in stack_map):
+            stack_map[key].count += 1
         else:
-            Stacks.stack_map[key] = [1, lines, state, thread_num]
+            stack_map[key] = stack_info
 
-    def print_stacks():
-        for key in Stacks.stack_map.keys():
-            count = Stacks.stack_map[key][0]
-            lines = Stacks.stack_map[key][1]
-            state = Stacks.stack_map[key][2]
-            num = Stacks.stack_map[key][3]
-            match = len(list(filter(lambda line: "zfs" in line.module, lines))) > 0
-            if match:
-                print("STATE    COUNT   NUM")
-                print("{0}  {1}     {2}".format(state, count, num))
-                print('\n'.join(str(line) for line in lines))
-                print("")
-        print(len(Stacks.stack_map.keys()))
+    def print_stacks(self, filter_module, filter_function, filter_state):
+        matching_count=0
+        for key, stack_info in self.stack_map.items():
+            frames = stack_info.frames
 
+            state_match = True
+            module_match = True
+            function_match = True
+            if filter_state is not None:
+                state_match = filter_state == stack_info.state # TODO maybe case insitive
+            if filter_module is not None:
+                module_match = any([filter_module in frame.module for frame in frames])
+            if filter_function is not None:
+                # filter is allowed to match '<function>' or '<function>+<offset>'
+                function_match = any([frame.function == filter_function or str(frame) == filter_function for frame in frames])
+
+            if state_match and module_match and function_match:
+                stack_info.pretty_print()
+                matching_count += 1
+
+
+        print("Total unique stacks:", len(self.stack_map.keys())) # debug
+        print("Matching unique stacks:", matching_count)
+
+    # TODO can/should we get more fine-grained state information
     def get_state(thread):
         if thread.is_running():
             return "RUNNING"
@@ -71,24 +108,33 @@ class Stacks(gdb.Command):
         if thread.is_stopped():
             return "STOPPED"
 
+    def build_stack_map():
+       stack_map = {}
+       for thread in Stacks.iterate_threads():
+           trace_lines=[]
+           frame = gdb.newest_frame()
+           while (frame != None):
+               if frame.pc() < 0xffff000000000000: # Hack
+                   break
+               if (frame.function() is None):
+                   function_name = frame.name()
+                   trace_lines.append(FrameInfo(function_name, None, ""))
+               else:
+                   function_name = frame.function().print_name
+                   offset = hex(int(frame.pc()) - int(frame.function().value().address))
+                   module = frame.function().symtab.objfile.filename
+                   trace_lines.append(FrameInfo(function_name, offset, module))
+               frame = frame.older()
+           Stacks.insert(stack_map, trace_lines, Stacks.get_state(thread), thread.num)
+       return stack_map
+
     def invoke(self, arg, from_tty):
-        Stacks.stack_map = {}
-        for thread in Stacks.iterate_threads():
-            trace_lines=[]
-            frame = gdb.newest_frame()
-            while (frame != None):
-                if frame.pc() < self.address:
-                    break
-                if (frame.function() is None):
-                    function_name = frame.name()
-                    trace_lines.append(StackInfo(function_name, None, ""))
-                else:
-                    function_name = frame.function().print_name
-                    offset = hex(int(frame.pc()) - int(frame.function().value().address))
-                    module = frame.function().symtab.objfile.filename
-                    trace_lines.append(StackInfo(function_name, offset, module))
-                frame = frame.older()
-            Stacks.insert(trace_lines, Stacks.get_state(thread), thread.num)
-        Stacks.print_stacks()
+        argv = gdb.string_to_argv(arg)
+        args = self.parser.parse_args(argv)
+
+        if not any(self.stack_map) or args.f:
+            self.stack_map = Stacks.build_stack_map()
+
+        self.print_stacks(args.m, args.c, args.t)
 
 Stacks()
