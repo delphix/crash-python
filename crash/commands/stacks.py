@@ -34,14 +34,17 @@ class FrameInfo():
         self.offset = offset
         self.module = module
 
-    def __str__(self):
+    def display_str(self):
         mod = ""
         if self.module and not self.module.startswith("vmlinux"): # TODO is this accurate?
             mod = " [" + self.module + "]"
+        return self.location_str() + mod
+
+    def location_str(self):
         offset = ""
         if self.offset is not None:
             offset = "+" + str(self.offset)
-        return self.function + offset + mod
+        return self.function + offset
 
 class StackInfo():
     def __init__(self, frames, state, thread_id):
@@ -51,12 +54,12 @@ class StackInfo():
         self.count = 1
 
     def get_key(self):
-        return self.state + ''.join(str(l) for l in self.frames)
+        return self.state + ''.join(f.location_str() for f in self.frames)
 
     def pretty_print(self):
         print("{0} {1} {2:>5}".format(str(self.thread_id).ljust(8), self.state.ljust(30), self.count))
         indent = '         '
-        print(indent + ("\n" + indent).join(str(line) for line in self.frames))
+        print(indent + ("\n" + indent).join(f.display_str() for f in self.frames))
         print("")
 
 class Stacks(gdb.Command):
@@ -89,7 +92,7 @@ class Stacks(gdb.Command):
     def print_stacks(self, filter_module, filter_function, filter_state):
         matching_count=0
 
-        for key, stack_info in sorted(self.stack_map.items(), key = lambda val: val[1].count):
+        for key, stack_info in sorted(self.stack_map.items(), key = lambda val: val[1].count, reverse=True):
             frames = stack_info.frames
 
             state_match = True
@@ -101,7 +104,7 @@ class Stacks(gdb.Command):
                 module_match = any([filter_module == frame.module for frame in frames])
             if filter_function is not None:
                 # filter is allowed to match '<function>' or '<function>+<offset>'
-                function_match = any([frame.function == filter_function or str(frame) == filter_function for frame in frames])
+                function_match = any([frame.function == filter_function or frame.location_str() == filter_function for frame in frames])
 
             if state_match and module_match and function_match:
                 stack_info.pretty_print()
