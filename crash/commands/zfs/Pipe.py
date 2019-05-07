@@ -18,6 +18,8 @@ class PipeableCommand():
     # subclass must override this, typically with a generator, i.e. it must use `yield`
     def call(self, input):
         assert "subclass must override"
+
+    # called if this is the last thing in the pipeline
     def setIsLast(self):
         self.islast = True
 
@@ -69,8 +71,6 @@ class Tail(PipeableCommand):
 Tail()
 
 class Pipe(gdb.Command):
-    """ walk list """
-
     def __init__(self):
         super(Pipe, self).__init__('pipe', gdb.COMMAND_DATA)
 
