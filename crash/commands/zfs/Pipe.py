@@ -21,41 +21,6 @@ class PipeableCommand():
     def setIsLast(self):
         self.islast = True
 
-class PipeList(PipeableCommand):
-
-    def __init__(self, arg=""):
-        super(PipeList, self).__init__('list')
-        try:
-            parser = argparse.ArgumentParser(prog='list')
-            parser.add_argument('addr', default=None, nargs='?')
-            self.args = parser.parse_args(gdb.string_to_argv(arg))
-        except:
-            pass
-
-    def walk(list, type=gdb.lookup_type('void').pointer()):
-        # XXX if tree is typed, verify that it's the expected type,
-        # otherwise cast?
-
-        assert type.code == gdb.TYPE_CODE_PTR
-
-        list_type = gdb.lookup_type('struct list').pointer()
-        typed_list = list.cast(list_type)
-        offset = int(typed_list.dereference()['list_offset'])
-        first_node = typed_list['list_head'].address
-        node = first_node['next']
-        while node != first_node:
-            yield gdb.Value(int(node) - offset).cast(type)
-            node = node['next']
-
-    def call(self, input):
-        if len(input) == 0:
-            input = [gdb.Value(int(self.args.addr, 0))]
-
-        for listaddr in input:
-            yield from PipeList.walk(listaddr, gdb.lookup_type('zfs_dbgmsg_t').pointer())
-
-PipeList()
-
 class LineCount(PipeableCommand):
     def __init__(self, arg=""):
         super(LineCount, self).__init__('wc')

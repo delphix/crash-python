@@ -4,12 +4,21 @@
 import gdb
 import argparse
 from typing import Callable, Any
+from crash.commands.zfs.Pipe import PipeableCommand
 
-class List(gdb.Command):
+class List(PipeableCommand, gdb.Command):
     """ walk list """
 
-    def __init__(self):
-        super(List, self).__init__('list', gdb.COMMAND_DATA)
+    def __init__(self, arg=""):
+        PipeableCommand.__init__(self, 'list')
+        gdb.Command.__init__(self, 'list', gdb.COMMAND_DATA)
+
+        try:
+            parser = argparse.ArgumentParser(prog='list')
+            parser.add_argument('addr', default=None, nargs='?')
+            self.args = parser.parse_args(gdb.string_to_argv(arg))
+        except:
+            pass
 
     def walk(list, type=gdb.lookup_type('void').pointer()):
         # XXX if tree is typed, verify that it's the expected type,
@@ -26,11 +35,15 @@ class List(gdb.Command):
             yield gdb.Value(int(node) - offset).cast(type)
             node = node['next']
 
+    def call(self, input):
+        if isinstance(input, list) and input == [] and self.args.addr is not None:
+            input = [gdb.Value(int(self.args.addr, 0))]
+
+        for listaddr in input:
+            yield from List.walk(listaddr)
+
     def invoke(self, argstr, from_tty):
-        parser = argparse.ArgumentParser(prog='list')
-        parser.add_argument('addr')
-        args = parser.parse_args(gdb.string_to_argv(argstr))
-        for node in List.walk(gdb.Value(int(args.addr, 0))):
+        for node in List(argstr).call([]):
             print(node)
 
 List()
