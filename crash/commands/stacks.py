@@ -23,6 +23,10 @@ import os.path
 
 # TODO doc string
 # TODO replace wierd constant used to stop unwinding
+# TODO print thread numbers for all matched (-a)
+# TODO figure out if thread state is real
+# TODO figure out if we can get other modules
+# TODO print addrs if we don't have function names
 
 class FrameInfo():
     def __init__(self, function, offset, module):
@@ -84,7 +88,8 @@ class Stacks(gdb.Command):
 
     def print_stacks(self, filter_module, filter_function, filter_state):
         matching_count=0
-        for key, stack_info in self.stack_map.items():
+
+        for key, stack_info in sorted(self.stack_map.items(), key = lambda val: val[1].count):
             frames = stack_info.frames
 
             state_match = True
