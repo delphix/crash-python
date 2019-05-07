@@ -81,9 +81,25 @@ class Member(PipeableCommand):
                 cmd = "(({}){})->{}".format(i.type, hex(i), self.args)
             else:
                 cmd = "(({}){}).{}".format(i.type, hex(i), self.args)
-            print(cmd)
+            #print(cmd)
             yield gdb.parse_and_eval(cmd)
 Member()
+
+class Filter(PipeableCommand):
+    def __init__(self, arg=""):
+        super(Filter, self).__init__('filter')
+        self.args = arg
+
+    def call(self, input):
+        for i in input:
+            if i.type.code == gdb.TYPE_CODE_PTR:
+                cmd = "(({}){})->{}".format(i.type, hex(i), self.args)
+            else:
+                cmd = "(({}){}).{}".format(i.type, hex(i), self.args)
+            #print(cmd)
+            if (int(gdb.parse_and_eval(cmd)) != 0):
+                yield i
+Filter()
 
 class Pipe(gdb.Command):
     def __init__(self):
