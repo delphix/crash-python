@@ -1,6 +1,7 @@
 import gdb
 from crash.commands import CrashCommandParser
 import argparse
+import os.path
 
 #
 # In terms of organization, this file is very different from the
@@ -86,7 +87,7 @@ class Stacks(gdb.Command):
             if filter_state is not None:
                 state_match = filter_state == stack_info.state # TODO maybe case insitive
             if filter_module is not None:
-                module_match = any([filter_module in frame.module for frame in frames])
+                module_match = any([filter_module == frame.module for frame in frames])
             if filter_function is not None:
                 # filter is allowed to match '<function>' or '<function>+<offset>'
                 function_match = any([frame.function == filter_function or str(frame) == filter_function for frame in frames])
@@ -122,7 +123,7 @@ class Stacks(gdb.Command):
                else:
                    function_name = frame.function().print_name
                    offset = hex(int(frame.pc()) - int(frame.function().value().address))
-                   module = frame.function().symtab.objfile.filename
+                   module = os.path.splitext(os.path.basename(frame.function().symtab.objfile.filename))[0]
                    trace_lines.append(FrameInfo(function_name, offset, module))
                frame = frame.older()
            Stacks.insert(stack_map, trace_lines, Stacks.get_state(thread), thread.num)
