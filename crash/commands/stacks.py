@@ -31,7 +31,13 @@ class FrameInfo():
         self.module = module
 
     def __str__(self):
-        return "{0}+{1}".format(self.function, str(self.offset))
+        mod = ""
+        if self.module and not self.module.startswith("vmlinux"): # TODO is this accurate?
+            mod = " [" + self.module + "]"
+        offset = ""
+        if self.offset is not None:
+            offset = "+" + str(self.offset)
+        return self.function + offset + mod
 
 class StackInfo():
     def __init__(self, frames, state, thread_id):
@@ -44,9 +50,9 @@ class StackInfo():
         return self.state + ''.join(str(l) for l in self.frames)
 
     def pretty_print(self):
-        print("STATE    COUNT   NUM")
-        print("{0}  {1}     {2}".format(self.state, self.count, self.thread_id))
-        print('\n'.join(str(line) for line in self.frames))
+        print("{0} {1} {2:>5}".format(str(self.thread_id).ljust(8), self.state.ljust(30), self.count))
+        indent = '         '
+        print(indent + ("\n" + indent).join(str(line) for line in self.frames))
         print("")
 
 class Stacks(gdb.Command):
@@ -119,6 +125,8 @@ class Stacks(gdb.Command):
                    break
                if (frame.function() is None):
                    function_name = frame.name()
+                   if function_name is None:
+                       function_name = hex(frame.pc())
                    trace_lines.append(FrameInfo(function_name, None, ""))
                else:
                    function_name = frame.function().print_name
@@ -136,6 +144,8 @@ class Stacks(gdb.Command):
         if not any(self.stack_map) or args.f:
             self.stack_map = Stacks.build_stack_map()
 
+        print("THREAD   STATE                          COUNT")
+        print("=============================================")
         self.print_stacks(args.m, args.c, args.t)
 
 Stacks()
