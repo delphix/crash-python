@@ -70,6 +70,21 @@ class Tail(PipeableCommand):
             yield o
 Tail()
 
+class Member(PipeableCommand):
+    def __init__(self, arg=""):
+        super(Member, self).__init__('member')
+        self.args = arg
+
+    def call(self, input):
+        for i in input:
+            if i.type.code == gdb.TYPE_CODE_PTR:
+                cmd = "(({}){})->{}".format(i.type, hex(i), self.args)
+            else:
+                cmd = "(({}){}).{}".format(i.type, hex(i), self.args)
+            print(cmd)
+            yield gdb.parse_and_eval(cmd)
+Member()
+
 class Pipe(gdb.Command):
     def __init__(self):
         super(Pipe, self).__init__('pipe', gdb.COMMAND_DATA)
