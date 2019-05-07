@@ -10,6 +10,7 @@ class PipeableCommand():
 
     def __init__(self, cmdname):
         PipeableCommand.allPipeableCommands[cmdname] = type(self)
+        self.islast = False
         rv = self.call([])
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
 
@@ -17,6 +18,8 @@ class PipeableCommand():
     # subclass must override this, typically with a generator, i.e. it must use `yield`
     def call(self, input):
         assert "subclass must override"
+    def setIsLast(self):
+        self.islast = True
 
 class PipeList(PipeableCommand):
 
@@ -125,6 +128,7 @@ class Pipe(gdb.Command):
         pipeline = []
         for name, arg in split_cmds:
             pipeline.append(PipeableCommand.allPipeableCommands[name](arg))
+        pipeline[-1].setIsLast()
         for o in self.iterate(pipeline):
             print(o)
 
