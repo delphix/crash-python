@@ -6,10 +6,14 @@ import argparse
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import parse_type
 
-class PipeableCommand():
+class PipeableCommand(gdb.Command):
     allPipeableCommands = {}
 
-    def __init__(self, cmdname, createGdb=True, inputType=None):
+    def __init__(self, cmdname, gdbCmdname=None, inputType=None):
+        if gdbCmdname is None:
+            gdbCmdname = cmdname
+        super().__init__(gdbCmdname, gdb.COMMAND_DATA)
+
         PipeableCommand.allPipeableCommands[cmdname] = type(self)
 
         self.cmdName = cmdname
@@ -19,47 +23,37 @@ class PipeableCommand():
         rv = self.call([])
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
 
-        if not createGdb:
+
+    def invoke(self, argstr, from_tty):
+        pipe_stages = argstr.split('|')
+        input = []
+        try:
+            first_arg = pipe_stages[0]
+            (beginning, space, last) = first_arg.strip().rpartition(' ')
+            if len(last) != 0:
+                input = [gdb.Value(int(last, 0))]
+                pipe_stages[0] = beginning
+        except:
+            pass
+
+        pipeline = []
+        pipeline.append(type(self)(pipe_stages[0]))
+        for stage in pipe_stages[1:]:
+            (cmdname, space, args) = stage.strip().partition(' ')
+            try:
+                pipeline.append(PipeableCommand.allPipeableCommands[cmdname](args))
+            except KeyError as e:
+                print('No command named "{}" found'.format(cmdname))
+                return
+
+        pipeline[-1].setIsLast()
+
+        try:
+            for o in PipeableCommand.executePipeline(input, pipeline):
+                print(o)
+        except Exception as e:
+            print(e)
             return
-
-        our_class = type(self)
-
-        # dynamically generate a new class to invoke our pipeable command when it's invoked directly from gdb
-        class dynamicClass(gdb.Command):
-            def __init__(self2):
-                gdb.Command.__init__(self2, cmdname, gdb.COMMAND_DATA)
-
-            def invoke(self2, argstr, from_tty):
-                pipe_stages = argstr.split('|')
-                input = []
-                try:
-                    first_arg = pipe_stages[0]
-                    (beginning, space, last) = first_arg.strip().rpartition(' ')
-                    if len(last) != 0:
-                        input = [gdb.Value(int(last, 0))]
-                        pipe_stages[0] = beginning
-                except:
-                    pass
-
-                pipeline = []
-                pipeline.append(our_class(pipe_stages[0]))
-                for stage in pipe_stages[1:]:
-                    (cmdname, space, args) = stage.strip().partition(' ')
-                    try:
-                        pipeline.append(PipeableCommand.allPipeableCommands[cmdname](args))
-                    except KeyError as e:
-                        print('No command named "{}" found'.format(cmdname))
-                        return
-
-                pipeline[-1].setIsLast()
-
-                try:
-                    for o in PipeableCommand.executePipeline(input, pipeline):
-                        print(o)
-                except Exception as e:
-                    print(e)
-                    return
-        dynamicClass()
 
     # input should be an iterable of gdb.Value's
     # args should be an array of instances of subclasses of PipeableCommand

@@ -6,7 +6,7 @@ from crash.commands.zfs.Pipe import PipeableCommand
 
 class Print(PipeableCommand):
     def __init__(self, arg=""):
-        super().__init__('print', False)
+        super().__init__('print', gdbCmdname='zprint')
         self.args = arg
     def call(self, input):
         for i in input:
