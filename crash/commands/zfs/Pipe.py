@@ -18,21 +18,40 @@ class PipeableCommand():
             return
 
         # Now we generate a dynamic dispatch class to invoke our pipeable command if it's invoked directly from gdb
-        def __init__(self2):
+        def constructor(self2):
             gdb.Command.__init__(self2, cmdname, gdb.COMMAND_DATA)
+
+        def iterate(self2, pipeline):
+            if len(pipeline) == 1:
+                yield from pipeline[0].call(self2.input)
+            else:
+                yield from pipeline[-1].call(self2.iterate(pipeline[:-1]))
+
         def invoke(self2, argstr, from_tty):
-            (first, space, last) = argstr.strip().rpartition(' ')
-            inputs = []
-            if len(last) != 0:
-                inputs = [gdb.Value(int(last, 0))]
+            pipe_stages = argstr.split('|')
+            self2.input = []
+            try:
+                first_arg = pipe_stages[0]
+                (beginning, space, last) = first_arg.strip().rpartition(' ')
+                if len(last) != 0:
+                    self2.input = [gdb.Value(int(last, 0))]
+                    pipe_stages[0] = beginning
+            except:
+                pass
 
-            for i in type(self)(first).call(inputs):
-                print(i)
+            pipeline = []
+            pipeline.append(type(self)(pipe_stages[0]))
+            for stage in pipe_stages[1:]:
+                (cmdname, space, args) = stage.strip().partition(' ')
+                pipeline.append(PipeableCommand.allPipeableCommands[cmdname](args))
+            pipeline[-1].setIsLast()
+            for o in self2.iterate(pipeline):
+                print(o)
 
-        gdbCommandClass = type(cmdname + 'Cmd', (gdb.Command,), {"__init__": __init__, "invoke": invoke})
+        gdbCommandClass = type(cmdname + 'Cmd', (gdb.Command,),
+                {"__init__": constructor, "invoke": invoke, "iterate": iterate})
         gdbCommandClass()
 
-    # subclass must override
     # subclass must override this, typically with a generator, i.e. it must use `yield`
     def call(self, input):
         assert "subclass must override"
@@ -129,37 +148,15 @@ class Null(PipeableCommand):
         return []
 Null()
 
-class Pipe(gdb.Command):
-    def __init__(self):
-        super().__init__('pipe', gdb.COMMAND_DATA)
+class Echo(PipeableCommand):
+    def __init__(self, arg=""):
+        super().__init__('echo')
+        self.arg = arg
 
-    def iterate(self, pipeline):
-        if len(pipeline) == 1:
-            yield from pipeline[0].call(self.input)
-        else:
-            yield from pipeline[-1].call(self.iterate(pipeline[:-1]))
-
-    def invoke(self, argstr, from_tty):
-        if len(argstr) == 0:
-            print("available commands:")
-            for cmd in sorted (PipeableCommand.allPipeableCommands.keys()):
-                print("    ", cmd)
-            return
-
-        split_cmds = [cmd.strip().partition(' ')[0:3:2] for cmd in argstr.split('|')]
-        self.input = []
-        try:
-            self.input = [gdb.Value(int(split_cmds[0][0], 0))]
-            split_cmds = split_cmds[1:]
-        except:
-            pass
-
-        pipeline = []
-        for name, arg in split_cmds:
-            pipeline.append(PipeableCommand.allPipeableCommands[name](arg))
-        pipeline[-1].setIsLast()
-        for o in self.iterate(pipeline):
-            print(o)
-
-Pipe()
+    def call(self, input):
+        for o in self.arg.split():
+            yield gdb.Value(int(o, 0))
+        for o in input:
+            yield o
+Echo()
 
