@@ -9,10 +9,9 @@ from crash.commands.zfs.cast import Cast
 
 class RangeTree(PipeableCommand):
     def __init__(self, arg=""):
-        super().__init__('range_tree')
+        super().__init__('range_tree', inputType="range_tree_t*")
 
-    def walk(self, treeaddr):
-        rt = treeaddr.cast(gdb.lookup_type('range_tree_t').pointer())
+    def walk(self, rt):
         if self.islast:
             print("{}: range tree of {} entries, {} bytes".format(
                 rt,
@@ -29,8 +28,8 @@ class RangeTree(PipeableCommand):
                 yield node
 
     def call(self, input):
-        for treeaddr in input:
-            yield from self.walk(treeaddr)
+        for i in input:
+            yield from self.walk(i)
 
 RangeTree()
 

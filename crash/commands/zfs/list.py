@@ -10,27 +10,18 @@ class List(PipeableCommand):
     """ walk list """
 
     def __init__(self, arg=""):
-        super().__init__('list')
+        super().__init__('list', inputType='list_t*')
 
-    def walk(list):
-        # XXX if tree is typed, verify that it's the expected type,
-        # otherwise cast?
-
-        list_type = gdb.lookup_type('struct list').pointer()
-        typed_list = list.cast(list_type)
-        offset = int(typed_list.dereference()['list_offset'])
-        first_node = typed_list['list_head'].address
+    def walk(self, list):
+        offset = int(list['list_offset'])
+        first_node = list['list_head'].address
         node = first_node['next']
         while node != first_node:
             yield gdb.Value(int(node) - offset)
             node = node['next']
 
     def call(self, input):
-        for listaddr in input:
-            yield from List.walk(listaddr)
-
-    def invoke(self, argstr, from_tty):
-        for node in List(argstr).call([]):
-            print(node)
+        for i in input:
+            yield from self.walk(i)
 
 List()
