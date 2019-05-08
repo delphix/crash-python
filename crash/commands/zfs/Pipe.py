@@ -35,7 +35,6 @@ class PipeableCommand(gdb.Command):
         rv = self.call([])
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
 
-
     def invoke(self, argstr, from_tty):
         shell_cmd = None
         shell_split = argstr.split('!')
@@ -118,15 +117,35 @@ class PipeableCommand(gdb.Command):
 class Locator(PipeableCommand):
     def __init__(self, cmdname, inputTypes={}, outputType=None):
         super().__init__(cmdname)
+        self.cmdname = cmdname
         self.inputTypes = inputTypes
         self.outputType = outputType
 
     # subclass may override this
-    def print(self, input):
+    def pretty_print(self, input):
         raise NotImplementedError
 
+    def caller(self, input):
+        baked = [ (parse_type(k).strip_typedefs().unqualified(), f) for k, f in self.inputTypes.items() ]
+        for i in input:
+            i_type = i.type.strip_typedefs().unqualified()
+            found = False
+            for t, f in baked:
+                if i_type == t:
+                    yield from f(i)
+                    found = True
+                    break
+            if not found:
+                raise TypeError('command "{}" does not handle input of type {} ({})'.format(
+                    self.cmdname,
+                    i.type,
+                    i_type))
+
     def call(self, input):
-        pass
+        if self.islast and "pretty_print" in dir(self):
+            self.pretty_print(self.caller(input))
+        else:
+            yield from self.caller(input)
 
 
 class Pipe(gdb.Command):

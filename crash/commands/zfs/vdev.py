@@ -10,12 +10,12 @@ class Vdev(Locator):
     def __init__(self, args = ""):
         super().__init__("vdev",
                 outputType="vdev_t*",
-                inputTypes={"spa_t*": self.vdevs_from_spa, "vdev_t*": self.vdevs_from_vdev})
+                inputTypes={"spa_t *": self.vdevs_from_spa, "vdev_t*": self.vdevs_from_vdev})
         # XXX add flag for "direct children (from vdev) only"?
         # XXX add flag for "top level vdevs (from spa) only"?
 
     # arg is iterable of gdb.Value of type vdev_t*
-    def print(self, vdevs):
+    def pretty_print(self, vdevs):
         print("\t%-18s %-7s %-4s %s" % ("ADDR", "STATE", "AUX",
                 "DESCRIPTION"))
         print("\t--------------------------------------------------")
@@ -45,12 +45,5 @@ class Vdev(Locator):
             cvd = vdev['vdev_child'][cid]
             yield cvd
             yield from self.vdevs_from_vdev(cvd)
-
-    def call(self, input):
-        for spa in input:
-            for v in self.vdevs_from_spa(spa):
-                if self.islast:
-                    self.print([v])
-                yield v
 
 Vdev()
