@@ -3,6 +3,7 @@
 
 import gdb
 import argparse
+import traceback
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import parse_type
 
@@ -52,6 +53,7 @@ class PipeableCommand(gdb.Command):
             for o in PipeableCommand.executePipeline(input, pipeline):
                 print(o)
         except Exception as e:
+            traceback.print_exc()
             print(e)
             return
 
@@ -75,6 +77,20 @@ class PipeableCommand(gdb.Command):
     # called if this is the last thing in the pipeline
     def setIsLast(self):
         self.islast = True
+
+class Locator(PipeableCommand):
+    def __init__(self, cmdname, inputTypes={}, outputType=None):
+        super().__init__(cmdname)
+        self.inputTypes = inputTypes
+        self.outputType = outputType
+
+    # subclass may override this
+    def print(self, input):
+        raise NotImplementedError
+
+    def call(self, input):
+        pass
+
 
 class Pipe(gdb.Command):
     def __init__(self):
