@@ -60,6 +60,16 @@ class PipeableCommand():
     def setIsLast(self):
         self.islast = True
 
+class Pipe(gdb.Command):
+    def __init__(self):
+        super().__init__('pipe', gdb.COMMAND_DATA)
+
+    def invoke(self, argstr, from_tty):
+        print("pipeable commands:")
+        for cmd in sorted (PipeableCommand.allPipeableCommands.keys()):
+            print("    ", cmd)
+Pipe()
+
 class LineCount(PipeableCommand):
     def __init__(self, arg=""):
         super().__init__('wc')
@@ -159,4 +169,5 @@ class Echo(PipeableCommand):
         for o in input:
             yield o
 Echo()
+
 
