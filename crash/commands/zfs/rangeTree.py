@@ -4,7 +4,7 @@
 import gdb
 import argparse
 from crash.commands.zfs.Pipe import PipeableCommand
-from crash.commands.zfs.Avl import Avl
+from crash.commands.zfs.avl import Avl
 from crash.commands.zfs.cast import Cast
 
 class RangeTree(PipeableCommand):

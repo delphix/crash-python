@@ -6,7 +6,7 @@ import argparse
 from crash.commands.zfs.Pipe import PipeableCommand
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import symbol_address
-from crash.commands.zfs.Avl import Avl
+from crash.commands.zfs.avl import Avl
 from crash.commands.zfs.cast import Cast
 from crash.commands.zfs.vdev import Vdev
 

@@ -4,7 +4,7 @@
 import gdb
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import symbol_address
-from crash.commands.zfs.List import List
+from crash.commands.zfs.list import List
 from crash.commands.zfs.cast import Cast
 from crash.commands.zfs.Pipe import PipeableCommand
 import datetime,getopt

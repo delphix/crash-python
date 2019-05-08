@@ -3,7 +3,7 @@
 
 import gdb
 import argparse
-from crash.commands.zfs.List import List
+from crash.commands.zfs.list import List
 from crash.commands.zfs.Pipe import PipeableCommand
 
 class MultiList(PipeableCommand):
