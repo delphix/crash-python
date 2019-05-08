@@ -13,7 +13,7 @@ from crash.commands.zfs.vdev import Vdev
 class Spa(PipeableCommand):
     def __init__(self, arg=""):
         super().__init__('spa')
-        parser = argparse.ArgumentParser(description = "spa commnad")
+        parser = argparse.ArgumentParser(description = "spa command")
         parser.add_argument('-v', '--vdevs',action='store_true',
                 help='vdevs flag' )
         parser.add_argument('-m', '--metaslab',action='store_true',
