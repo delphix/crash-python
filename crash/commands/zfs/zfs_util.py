@@ -26,3 +26,6 @@ def offsetof(name : str, field_name : str) -> int:
         return field.bitpos / 8
     return -1
 
+def enum_lookup(type, field):
+    val = gdb.lookup_type(type).fields()[field].name
+    return val.split('_', 2)[-1]
