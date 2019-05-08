@@ -190,9 +190,10 @@ class CrashKernel(CrashBaseClass):
         self.arch = archclass()
 
         self.target = gdb.current_target()
-        self.vmcore = self.target.kdump
+        if self.target.shortname == 'kdumpfile':
+            self.vmcore = self.target.kdump
+            self.target.fetch_registers = self.fetch_registers
 
-        self.target.fetch_registers = self.fetch_registers
         self.crashing_thread = None
 
     # When working without a symbol table, we still need to be able
@@ -419,15 +420,15 @@ class CrashKernel(CrashBaseClass):
 
         for path in self.module_debuginfo_path:
             filepath = "{}/{}".format(path, build_id_path)
-            if self.try_load_debuginfo(filepath, verbose):
+            if self.try_load_debuginfo(objfile, filepath, verbose):
                 break
 
             filepath = self.find_module_file(filename, path)
-            if self.try_load_debuginfo(filepath, verbose):
+            if filepath and self.try_load_debuginfo(objfile, filepath, verbose):
                 break
 
         if not objfile.has_symbols():
-            print("Could not locate debuginfo for {}".format(name))
+            print("Could not locate debuginfo for {}".format(modpath))
 
     def setup_tasks(self):
         gdb.execute('set print thread-events 0')
@@ -461,7 +462,7 @@ class CrashKernel(CrashBaseClass):
             cpu = None
             regs = None
             active = int(task.address) in rqscurrs
-            if active:
+            if active and self.target.shortname == 'kdumpfile':
                 cpu = rqscurrs[int(task.address)]
                 regs = self.vmcore.attr.cpu[cpu].reg
 
@@ -473,11 +474,17 @@ class CrashKernel(CrashBaseClass):
             except gdb.error as e:
                 print("Failed to setup task @{:#x}".format(int(task.address)))
                 continue
+
             thread.name = task['comm'].string()
+
             if active and crashing_cpu is not None and cpu == crashing_cpu:
                 self.crashing_thread = thread
 
             self.arch.setup_thread_info(thread)
+
+            if not active:
+                self.arch.fetch_register_scheduled_inactive(thread, -1)
+
             ltask.attach_thread(thread)
             ltask.set_get_stack_pointer(self.arch.get_stack_pointer)
 

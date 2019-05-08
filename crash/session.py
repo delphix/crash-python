@@ -6,7 +6,6 @@ import sys
 
 from crash.infra import autoload_submodules
 from crash.kernel import CrashKernel as kernel, CrashKernelError
-from kdumpfile import kdumpfile
 
 class Session(object):
     """

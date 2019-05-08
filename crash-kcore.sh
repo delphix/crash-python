@@ -11,6 +11,10 @@ if [[ -z "$TOP" ]]; then
 	exit 1
 fi
 
+export PYTHONPATH="/usr/local/lib/python3.6/site-packages:$PYTHONPATH"
+export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+export PATH="/usr/local/bin:$PATH"
+
 GDB="/usr/local/bin/gdb"
 VMLINUX="/usr/lib/debug/boot/vmlinux-$(uname -r)"
 
@@ -47,19 +51,16 @@ set height 0
 set print pretty on
 
 add-symbol-file $VMLINUX -o $OFFSET
-core-file /proc/kcore
+target core /proc/kcore
 
 python
 sys.path.insert(0, '$TOP/build/lib')
 end
 
-source $TOP/contrib/mods.py
+python
+import crash.session
+x = crash.session.Session(None, None, None)
+end
 EOF
-
-find "$TOP/crash/commands/zfs" -type f -name '*.py' | while read -r file; do
-	cat <<-EOF >>"$GDBINIT"
-	source $file
-	EOF
-done
 
 $GDB -nh -x "$GDBINIT"
