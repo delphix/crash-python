@@ -136,8 +136,8 @@ class Locator(PipeableCommand):
                     found = True
                     break
             if not found:
-                raise TypeError('command "{}" does not handle input of type {} ({})'.format(
-                    self.cmdname,
+                raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
+                    self.cmdName,
                     i.type,
                     i_type))
 
@@ -147,6 +147,43 @@ class Locator(PipeableCommand):
         else:
             yield from self.caller(input)
 
+class AbstractContainer(PipeableCommand):
+    allAbstractContainers = {}
+
+    def __init__(self, cmdname, inputType):
+        super().__init__(cmdname)
+        self.inputType = inputType
+        AbstractContainer.allAbstractContainers[self.inputType] = type(self)
+
+    # subclass must override this
+    # obj is a gdb.Value of type inputType
+    def walk(self, obj):
+        raise NotImplementedError
+
+    def call(self, input):
+        for i in input:
+            yield from self.walk(i)
+
+
+class Walk(PipeableCommand):
+    def __init__(self, arg=""):
+        super().__init__('walk')
+
+    def call(self, input):
+        baked = [ (parse_type(k).strip_typedefs().unqualified(), c) for k, c in AbstractContainer.allAbstractContainers.items() ]
+        for i in input:
+            i_type = i.type.strip_typedefs().unqualified()
+            found = False
+            for t, c in baked:
+                if i_type == t:
+                    yield from c().walk(i)
+                    found = True
+                    break
+            if not found:
+                raise TypeError('no walker found for input of type {} (base type {})'.format(
+                    i.type,
+                    i_type))
+Walk()
 
 class Pipe(gdb.Command):
     def __init__(self):

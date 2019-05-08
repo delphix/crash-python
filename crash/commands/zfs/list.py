@@ -4,9 +4,9 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from crash.commands.zfs.Pipe import PipeableCommand
+from crash.commands.zfs.Pipe import AbstractContainer
 
-class List(PipeableCommand):
+class List(AbstractContainer):
     """ walk list """
 
     def __init__(self, arg=""):
@@ -19,9 +19,5 @@ class List(PipeableCommand):
         while node != first_node:
             yield gdb.Value(int(node) - offset)
             node = node['next']
-
-    def call(self, input):
-        for i in input:
-            yield from self.walk(i)
 
 List()

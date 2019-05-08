@@ -4,15 +4,15 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from crash.commands.zfs.Pipe import PipeableCommand
+from crash.commands.zfs.Pipe import AbstractContainer
 
-class Avl(PipeableCommand):
+class Avl(AbstractContainer):
     """ walk avl tree """
 
     def __init__(self, arg=""):
         super().__init__('avl', inputType='avl_tree_t*')
 
-    def walk(tree):
+    def walk(self, tree):
         offset = int(tree['avl_offset'])
         root = tree['avl_root']
         yield from Avl.helper(root, offset)
@@ -27,9 +27,5 @@ class Avl(PipeableCommand):
 
         rchild = node.dereference()['avl_child'][1]
         yield from Avl.helper(rchild, offset)
-
-    def call(self, input):
-        for i in input:
-            yield from Avl.walk(i)
 
 Avl()

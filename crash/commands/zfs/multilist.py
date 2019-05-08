@@ -4,9 +4,9 @@
 import gdb
 import argparse
 from crash.commands.zfs.list import List
-from crash.commands.zfs.Pipe import PipeableCommand
+from crash.commands.zfs.Pipe import AbstractContainer
 
-class MultiList(PipeableCommand):
+class MultiList(AbstractContainer):
     """ walk multilist """
 
     def __init__(self):
@@ -20,9 +20,4 @@ class MultiList(PipeableCommand):
             sublist = sublists[i]['mls_list'].address
             yield from PipeableCommand.executePipeline([sublist], [List()])
 
-    def call(self, input):
-        for i in input:
-            yield from self.walk(i)
-
 MultiList()
-
