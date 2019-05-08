@@ -42,12 +42,20 @@ class PipeableCommand():
                 pipeline.append(our_class(pipe_stages[0]))
                 for stage in pipe_stages[1:]:
                     (cmdname, space, args) = stage.strip().partition(' ')
-                    pipeline.append(PipeableCommand.allPipeableCommands[cmdname](args))
+                    try:
+                        pipeline.append(PipeableCommand.allPipeableCommands[cmdname](args))
+                    except KeyError as e:
+                        print('No command named "{}" found'.format(cmdname))
+                        return
 
                 pipeline[-1].setIsLast()
 
-                for o in PipeableCommand.executePipeline(input, pipeline):
-                    print(o)
+                try:
+                    for o in PipeableCommand.executePipeline(input, pipeline):
+                        print(o)
+                except Exception as e:
+                    print(e)
+                    return
         dynamicClass()
 
     # input should be an iterable of gdb.Value's
@@ -129,28 +137,28 @@ def parseMember(value, memberString, strictChecking=False):
     while len(memberString) > 0:
         match = regexp.match(memberString)
         if not match:
-            raise Exception("Invalid member string {}".format(memberString))
+            raise Exception('Invalid member string "{}"'.format(memberString))
         operator = match.group(1)
         member = match.group(2)
         memberString = match.group(3)
         if operator == '.' or operator == '->':
             if strictChecking:
                 if operator == '->' and value.type.code != gdb.TYPE_CODE_PTR:
-                    raise InvalidAccessException('Cannot access non-pointer with "->"')
+                    raise TypeError('Cannot access non-pointer with "->"')
                 if operator == '.' and value.type.code == gdb.TYPE_CODE_PTR:
-                    raise InvalidAccessException('Cannot access pointer with "."')
+                    raise TypeError('Cannot access pointer with "."')
             value = value[member]
         elif operator == '[':
             if strictChecking:
                 if member[-1] != '[':
-                    raise InvalidAccessException('Missing ] in index expression [{}'.format(member))
+                    raise SyntaxError('Missing ] in index expression "[{}"'.format(member))
             idx = int(member[:-1])
             if value.type.code != gdb.TYPE_CODE_PTR and value.type.code != gdb.TYPE_CODE_ARRAY:
-                raise InvalidAccessException('Cannot index into non-pointer value {}'.format(value))
+                raise TypeError('Cannot index into non-pointer value {}'.format(value))
             itemsize = value.type.target().sizeof
             value = value[idx]
         else:
-            assert False, 'Unknown operator {}'.format(operator)
+            assert False, 'Unknown operator "{}"'.format(operator)
 
     if value.type.strip_typedefs().code == gdb.TYPE_CODE_STRUCT:
         value = value.address
