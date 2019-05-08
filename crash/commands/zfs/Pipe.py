@@ -123,6 +123,39 @@ class Tail(PipeableCommand):
             yield o
 Tail()
 
+import re
+def parseMember(value, memberString, strictChecking=False):
+    regexp = re.compile('(\.|->|\[)([a-zA-Z0-9_\]]*)(.*)')
+    while len(memberString) > 0:
+        match = regexp.match(memberString)
+        if not match:
+            raise Exception("Invalid member string {}".format(memberString))
+        operator = match.group(1)
+        member = match.group(2)
+        memberString = match.group(3)
+        if operator == '.' or operator == '->':
+            if strictChecking:
+                if operator == '->' and value.type.code != gdb.TYPE_CODE_PTR:
+                    raise InvalidAccessException('Cannot access non-pointer with "->"')
+                if operator == '.' and value.type.code == gdb.TYPE_CODE_PTR:
+                    raise InvalidAccessException('Cannot access pointer with "."')
+            value = value[member]
+        elif operator == '[':
+            if strictChecking:
+                if member[-1] != '[':
+                    raise InvalidAccessException('Missing ] in index expression [{}'.format(member))
+            idx = int(member[:-1])
+            if value.type.code != gdb.TYPE_CODE_PTR and value.type.code != gdb.TYPE_CODE_ARRAY:
+                raise InvalidAccessException('Cannot index into non-pointer value {}'.format(value))
+            itemsize = value.type.target().sizeof
+            value = value[idx]
+        else:
+            assert False, 'Unknown operator {}'.format(operator)
+
+    if value.type.strip_typedefs().code == gdb.TYPE_CODE_STRUCT:
+        value = value.address
+    return value
+
 class Member(PipeableCommand):
     def __init__(self, arg=""):
         super().__init__('member')
@@ -130,12 +163,8 @@ class Member(PipeableCommand):
 
     def call(self, input):
         for i in input:
-            if i.type.code == gdb.TYPE_CODE_PTR:
-                cmd = "(({}){})->{}".format(i.type, hex(i), self.args)
-            else:
-                cmd = "(({}){}).{}".format(i.type, hex(i), self.args)
-            #print(cmd)
-            yield gdb.parse_and_eval(cmd)
+            yield parseMember(i, self.args)
+
 Member()
 
 class Filter(PipeableCommand):
