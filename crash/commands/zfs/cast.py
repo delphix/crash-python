@@ -5,19 +5,7 @@ import gdb
 import argparse
 from typing import Callable, Any
 from crash.commands.zfs.Pipe import PipeableCommand
-
-def parse_type(typestr):
-    typestr = typestr.strip()
-    val = None
-    ptr_count = 0
-    while typestr.endswith('*'):
-        typestr = typestr[:-1]
-        ptr_count += 1
-    val = gdb.lookup_type(typestr.strip())
-    while ptr_count > 0:
-        ptr_count -= 1
-        val = val.pointer()
-    return val
+from crash.commands.zfs.zfs_util import parse_type
 
 class Cast(PipeableCommand):
     """ walk list """

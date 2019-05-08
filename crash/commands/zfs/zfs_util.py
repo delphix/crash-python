@@ -29,3 +29,16 @@ def offsetof(name : str, field_name : str) -> int:
 def enum_lookup(type, field):
     val = gdb.lookup_type(type).fields()[field].name
     return val.split('_', 2)[-1]
+
+def parse_type(typestr):
+    typestr = typestr.strip()
+    val = None
+    ptr_count = 0
+    while typestr.endswith('*'):
+        typestr = typestr[:-1]
+        ptr_count += 1
+    val = gdb.lookup_type(typestr.strip())
+    while ptr_count > 0:
+        ptr_count -= 1
+        val = val.pointer()
+    return val

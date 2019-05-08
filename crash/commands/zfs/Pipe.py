@@ -4,13 +4,15 @@
 import gdb
 import argparse
 from typing import Callable, Any
+from crash.commands.zfs.zfs_util import parse_type
 
 class PipeableCommand():
     allPipeableCommands = {}
 
-    def __init__(self, cmdname, createGdb=True):
+    def __init__(self, cmdname, createGdb=True, inputType=None):
         PipeableCommand.allPipeableCommands[cmdname] = type(self)
 
+        self.inputType = inputType
         self.islast = False
 
         rv = self.call([])
@@ -83,6 +85,39 @@ class Pipe(gdb.Command):
         for cmd in sorted (PipeableCommand.allPipeableCommands.keys()):
             print("    ", cmd)
 Pipe()
+
+class Coerce(PipeableCommand):
+    def __init__(self, arg="void *"):
+        super().__init__('coerce')
+        self.type = parse_type(arg).strip_typedefs().unqualified()
+        if self.type.code is not gdb.TYPE_CODE_PTR:
+            raise TypeError('can only coerce to pointer types, not {} ({})'.format(arg, self.type))
+
+    def coerce(self, obj):
+        tt = obj.type.strip_typedefs().unqualified()
+
+        # same type is fine
+        if tt == self.type:
+            return obj
+
+        # "void *" can be coerced to any pointer type
+        if tt.code is gdb.TYPE_CODE_PTR and tt.target().code is gdb.TYPE_CODE_VOID:
+            return obj.cast(self.type)
+
+        # integers can be coerced to any pointer typo
+        if tt.code is gdb.TYPE_CODE_INT:
+            return obj.cast(self.type)
+
+        # "type" can be coerced to "type *"
+        if obj.address is not None and obj.address.type.strip_typedefs().unqualified() == self.type:
+            return obj.address.cast(self.type)
+
+        raise TypeError("can not coerce {} to {}".format(tt, self.type))
+
+    def call(self, input):
+        for i in input:
+            yield self.coerce(i)
+Coerce()
 
 class LineCount(PipeableCommand):
     def __init__(self, arg=""):
