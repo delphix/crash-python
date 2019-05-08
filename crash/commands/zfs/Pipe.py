@@ -12,6 +12,7 @@ class PipeableCommand():
     def __init__(self, cmdname, createGdb=True, inputType=None):
         PipeableCommand.allPipeableCommands[cmdname] = type(self)
 
+        self.cmdName = cmdname
         self.inputType = inputType
         self.islast = False
 
@@ -62,11 +63,16 @@ class PipeableCommand():
 
     # input should be an iterable of gdb.Value's
     # args should be an array of instances of subclasses of PipeableCommand
-    def executePipeline(input, args):
+    def executePipeline(first_input, args):
+        # if this stage wants its input in a certain type, insert a
+        # "coerce" stage before it
+        if args[-1].inputType is not None:
+            args.insert(-1, Coerce(args[-1].inputType, auxError='for "{}" command'.format(args[-1].cmdName)))
         if len(args) == 1:
-            yield from args[0].call(input)
+            this_input = first_input
         else:
-            yield from args[-1].call(PipeableCommand.executePipeline(input, args[:-1]))
+            this_input = PipeableCommand.executePipeline(first_input, args[:-1])
+        yield from args[-1].call(this_input)
 
     # subclass must override this, typically with a generator, i.e. it must use `yield`
     def call(self, input):
@@ -87,8 +93,9 @@ class Pipe(gdb.Command):
 Pipe()
 
 class Coerce(PipeableCommand):
-    def __init__(self, arg="void *"):
+    def __init__(self, arg="void *", auxError=''):
         super().__init__('coerce')
+        self.auxError = auxError
         self.type = parse_type(arg).strip_typedefs().unqualified()
         if self.type.code is not gdb.TYPE_CODE_PTR:
             raise TypeError('can only coerce to pointer types, not {} ({})'.format(arg, self.type))
@@ -112,7 +119,7 @@ class Coerce(PipeableCommand):
         if obj.address is not None and obj.address.type.strip_typedefs().unqualified() == self.type:
             return obj.address.cast(self.type)
 
-        raise TypeError("can not coerce {} to {}".format(tt, self.type))
+        raise TypeError("can not coerce {} to {} {}".format(tt, self.type, self.auxError))
 
     def call(self, input):
         for i in input:
@@ -195,8 +202,8 @@ def parseMember(value, memberString, strictChecking=False):
         else:
             assert False, 'Unknown operator "{}"'.format(operator)
 
-    if value.type.strip_typedefs().code == gdb.TYPE_CODE_STRUCT:
-        value = value.address
+#    if value.type.strip_typedefs().code == gdb.TYPE_CODE_STRUCT:
+#        value = value.address
     return value
 
 class Member(PipeableCommand):

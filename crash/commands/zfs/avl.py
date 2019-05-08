@@ -10,16 +10,11 @@ class Avl(PipeableCommand):
     """ walk avl tree """
 
     def __init__(self, arg=""):
-        super().__init__('avl')
+        super().__init__('avl', inputType='avl_tree_t*')
 
     def walk(tree):
-        # XXX if tree is typed, verify that it's the expected type,
-        # otherwise cast?
-
-        avl_tree_type = gdb.lookup_type('struct avl_tree').pointer()
-        typed_tree = tree.cast(avl_tree_type)
-        offset = int(typed_tree.dereference()['avl_offset'])
-        root = typed_tree['avl_root']
+        offset = int(tree['avl_offset'])
+        root = tree['avl_root']
         yield from Avl.helper(root, offset)
 
     def helper(node, offset):
@@ -34,7 +29,7 @@ class Avl(PipeableCommand):
         yield from Avl.helper(rchild, offset)
 
     def call(self, input):
-        for treeaddr in input:
-            yield from Avl.walk(treeaddr)
+        for i in input:
+            yield from Avl.walk(i)
 
 Avl()
