@@ -23,7 +23,7 @@ class Avl(PipeableCommand):
         lchild = node.dereference()['avl_child'][0]
         yield from Avl.helper(lchild, offset)
 
-        yield gdb.Value(int(node) - offset)
+        yield gdb.Value(int(node) - offset).cast(gdb.lookup_type('void').pointer())
 
         rchild = node.dereference()['avl_child'][1]
         yield from Avl.helper(rchild, offset)
