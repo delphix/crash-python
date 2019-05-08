@@ -10,51 +10,55 @@ class PipeableCommand():
 
     def __init__(self, cmdname, createGdb=True):
         PipeableCommand.allPipeableCommands[cmdname] = type(self)
+
         self.islast = False
+
         rv = self.call([])
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
 
         if not createGdb:
             return
 
-        # Now we generate a dynamic dispatch class to invoke our pipeable command if it's invoked directly from gdb
-        def constructor(self2):
-            gdb.Command.__init__(self2, cmdname, gdb.COMMAND_DATA)
+        our_class = type(self)
 
-        def iterate(self2, pipeline):
-            if len(pipeline) == 1:
-                yield from pipeline[0].call(self2.input)
-            else:
-                yield from pipeline[-1].call(self2.iterate(pipeline[:-1]))
+        # dynamically generate a new class to invoke our pipeable command when it's invoked directly from gdb
+        class dynamicClass(gdb.Command):
+            def __init__(self2):
+                gdb.Command.__init__(self2, cmdname, gdb.COMMAND_DATA)
 
-        def invoke(self2, argstr, from_tty):
-            pipe_stages = argstr.split('|')
-            self2.input = []
-            try:
-                first_arg = pipe_stages[0]
-                (beginning, space, last) = first_arg.strip().rpartition(' ')
-                if len(last) != 0:
-                    self2.input = [gdb.Value(int(last, 0))]
-                    pipe_stages[0] = beginning
-            except:
-                pass
+            def iterate(self2, pipeline):
+                if len(pipeline) == 1:
+                    yield from pipeline[0].call(self2.input)
+                else:
+                    yield from pipeline[-1].call(self2.iterate(pipeline[:-1]))
 
-            pipeline = []
-            pipeline.append(type(self)(pipe_stages[0]))
-            for stage in pipe_stages[1:]:
-                (cmdname, space, args) = stage.strip().partition(' ')
-                pipeline.append(PipeableCommand.allPipeableCommands[cmdname](args))
-            pipeline[-1].setIsLast()
-            for o in self2.iterate(pipeline):
-                print(o)
+            def invoke(self2, argstr, from_tty):
+                pipe_stages = argstr.split('|')
+                self2.input = []
+                try:
+                    first_arg = pipe_stages[0]
+                    (beginning, space, last) = first_arg.strip().rpartition(' ')
+                    if len(last) != 0:
+                        self2.input = [gdb.Value(int(last, 0))]
+                        pipe_stages[0] = beginning
+                except:
+                    pass
 
-        gdbCommandClass = type(cmdname + 'Cmd', (gdb.Command,),
-                {"__init__": constructor, "invoke": invoke, "iterate": iterate})
-        gdbCommandClass()
+                pipeline = []
+                pipeline.append(our_class(pipe_stages[0]))
+                for stage in pipe_stages[1:]:
+                    (cmdname, space, args) = stage.strip().partition(' ')
+                    pipeline.append(PipeableCommand.allPipeableCommands[cmdname](args))
+
+                pipeline[-1].setIsLast()
+
+                for o in self2.iterate(pipeline):
+                    print(o)
+        dynamicClass()
 
     # subclass must override this, typically with a generator, i.e. it must use `yield`
     def call(self, input):
-        assert "subclass must override"
+        raise NotImplementedError
 
     # called if this is the last thing in the pipeline
     def setIsLast(self):
