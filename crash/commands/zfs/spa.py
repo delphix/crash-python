@@ -7,6 +7,7 @@ from crash.commands.zfs.Pipe import PipeableCommand
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import symbol_address
 from crash.commands.zfs.Avl import Avl
+from crash.commands.zfs.cast import Cast
 from crash.commands.zfs.vdev import Vdev
 
 class Spa(PipeableCommand):
@@ -35,7 +36,9 @@ class Spa(PipeableCommand):
 
     def call(self, input):
         if isinstance(input, list) and len(input) == 0:
-            input = Avl.walk(symbol_address("spa_namespace_avl"), gdb.lookup_type('struct spa').pointer())
+            input = PipeableCommand.executePipeline(
+                    [symbol_address("spa_namespace_avl")],
+                    [Avl(), Cast('spa_t *')])
         if self.islast:
             print("{:14} {}".format("ADDR", "NAME"))
             print("----------------------------------------")
