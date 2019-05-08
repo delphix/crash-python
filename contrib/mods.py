@@ -3,8 +3,6 @@
 
 from crash.types.list import list_for_each_entry
 import gdb
-import uuid
-from crash.cache import sys
 import os
 
 def find(name, path):
@@ -12,10 +10,26 @@ def find(name, path):
         if name in files:
             return os.path.join(root, name)
 
-sys.cache.init_sys_caches()
-path = "/lib/modules/{}".format(sys.cache.utsname_cache['release'])
+#
+# XXX: Copied from "crash/kernel.py"
+#
+def get_module_sections(module):
+    attrs = module['sect_attrs']
+    out = []
+    for sec in range(0, attrs['nsections']):
+        attr = attrs['attrs'][sec]
+        name = attr['name'].string()
+        if name == '.text':
+            continue
+        out.append("-s {} {:#x}".format(name, int(attr['address'])))
 
-modules = gdb.lookup_symbol('modules', None)[0].value()
+    return " ".join(out)
+
+init_uts_ns = gdb.lookup_symbol('init_uts_ns')[0].value()
+release = init_uts_ns['name']['release'].string()
+path = "/lib/modules/{}".format(release)
+
+modules = gdb.lookup_symbol('modules')[0].value()
 module_type = gdb.lookup_type('struct module')
 for module in list_for_each_entry(modules, module_type, 'list'):
     modname = "{}.ko".format(module['name'].string())
@@ -24,6 +38,8 @@ for module in list_for_each_entry(modules, module_type, 'list'):
         modname = modname.replace('_', '-')
         modpath = find(modname, path)
     if not modpath:
-        print "Couldn't find {} under {}.".format(module['name'], path)
+        print("Couldn't find {} under {}.".format(module['name'], path))
         continue
-    gdb.execute("add-symbol-file {} {}".format(modpath, module['module_core']))
+    sections = get_module_sections(module)
+    gdb.execute("add-symbol-file {} {:#x} {}"
+            .format(modpath, int(module['core_layout']['base']), sections))
