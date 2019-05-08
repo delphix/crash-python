@@ -46,6 +46,12 @@ popd >/dev/null
 find /lib/modules/$(uname -r)/kernel/zfs -name '*.ko' -exec mv {} {}.orig \;
 
 cat <<EOF >"$GDBINIT"
+set stack-cache off
+set code-cache off
+set dcache size 1
+set dcache line-size 2
+set non-stop on
+
 set python print-stack full
 set height 0
 set print pretty on
