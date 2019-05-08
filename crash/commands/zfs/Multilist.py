@@ -12,11 +12,9 @@ class MultiList(PipeableCommand):
     def __init__(self):
         super().__init__('multilist')
 
-    def walk(multilist, type=gdb.lookup_type('void').pointer()):
+    def walk(multilist):
         # XXX if tree is typed, verify that it's the expected type,
         # otherwise cast?
-
-        assert type.code == gdb.TYPE_CODE_PTR
 
         list_type = gdb.lookup_type('struct multilist').pointer()
         typed_list = multilist.cast(list_type)
@@ -25,8 +23,7 @@ class MultiList(PipeableCommand):
 
         for i in range(num_sublists):
             sublist = sublists[i]['mls_list'].address
-            for node in List.walk(sublist, type):
-                yield node
+            yield from PipeableCommand.executePipeline([sublist], [List()])
 
     def call(self, input):
         for listaddr in input:

@@ -26,20 +26,14 @@ class PipeableCommand():
             def __init__(self2):
                 gdb.Command.__init__(self2, cmdname, gdb.COMMAND_DATA)
 
-            def iterate(self2, pipeline):
-                if len(pipeline) == 1:
-                    yield from pipeline[0].call(self2.input)
-                else:
-                    yield from pipeline[-1].call(self2.iterate(pipeline[:-1]))
-
             def invoke(self2, argstr, from_tty):
                 pipe_stages = argstr.split('|')
-                self2.input = []
+                input = []
                 try:
                     first_arg = pipe_stages[0]
                     (beginning, space, last) = first_arg.strip().rpartition(' ')
                     if len(last) != 0:
-                        self2.input = [gdb.Value(int(last, 0))]
+                        input = [gdb.Value(int(last, 0))]
                         pipe_stages[0] = beginning
                 except:
                     pass
@@ -52,9 +46,17 @@ class PipeableCommand():
 
                 pipeline[-1].setIsLast()
 
-                for o in self2.iterate(pipeline):
+                for o in PipeableCommand.executePipeline(input, pipeline):
                     print(o)
         dynamicClass()
+
+    # input should be an iterable of gdb.Value's
+    # args should be an array of instances of subclasses of PipeableCommand
+    def executePipeline(input, args):
+        if len(args) == 1:
+            yield from args[0].call(input)
+        else:
+            yield from args[-1].call(PipeableCommand.executePipeline(input, args[:-1]))
 
     # subclass must override this, typically with a generator, i.e. it must use `yield`
     def call(self, input):

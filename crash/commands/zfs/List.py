@@ -12,11 +12,9 @@ class List(PipeableCommand):
     def __init__(self, arg=""):
         super().__init__('list')
 
-    def walk(list, type=gdb.lookup_type('void').pointer()):
+    def walk(list):
         # XXX if tree is typed, verify that it's the expected type,
         # otherwise cast?
-
-        assert type.code == gdb.TYPE_CODE_PTR
 
         list_type = gdb.lookup_type('struct list').pointer()
         typed_list = list.cast(list_type)
@@ -24,7 +22,7 @@ class List(PipeableCommand):
         first_node = typed_list['list_head'].address
         node = first_node['next']
         while node != first_node:
-            yield gdb.Value(int(node) - offset).cast(type)
+            yield gdb.Value(int(node) - offset)
             node = node['next']
 
     def call(self, input):

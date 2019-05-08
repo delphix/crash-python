@@ -5,6 +5,7 @@ import gdb
 import argparse
 from crash.commands.zfs.Pipe import PipeableCommand
 from crash.commands.zfs.Avl import Avl
+from crash.commands.zfs.cast import Cast
 
 class RangeTree(PipeableCommand):
     def __init__(self, arg=""):
@@ -17,7 +18,8 @@ class RangeTree(PipeableCommand):
                 rt,
                 rt['rt_root']['avl_numnodes'],
                 rt['rt_space']))
-        for node in Avl.walk(rt['rt_root'].address, gdb.lookup_type('range_seg_t').pointer()):
+        for node in PipeableCommand.executePipeline([rt['rt_root'].address],
+                [Avl(), Cast('range_seg_t *')]):
             if self.islast:
                 print("    [{} {}) (length {})".format(
                     hex(node['rs_start']),
