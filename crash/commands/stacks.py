@@ -24,11 +24,12 @@ import os.path
 # TODO doc string
 # TODO replace wierd constant used to stop unwinding
 # TODO print thread numbers for all matched (-a)
-# TODO figure out if thread state is real
-# TODO figure out if we can get other modules
-# TODO print addrs if we don't have function names
+# TODO figure out if thread state is real - our theory is maybe emulating /proc/pid/status, which gets it's
+# value from the struct task_struct?
+# TODO decide what we want to do about paging
 
 class FrameInfo():
+
     def __init__(self, function, offset, module):
         self.function = function
         self.offset = offset
@@ -63,15 +64,17 @@ class StackInfo():
         print("")
 
 class Stacks(gdb.Command):
+    #TODO fill this in
+    """ Stacks documentation here"""
 
     def __init__(self):
         name = "stacks"
         super(Stacks, self).__init__(name, gdb.COMMAND_DATA)
-        parser = CrashCommandParser(prog=name)
-        parser.add_argument('-m')
-        parser.add_argument('-c')
-        parser.add_argument('-t')
-        parser.add_argument('-f', action='store_true')
+        parser = CrashCommandParser(prog=name,description='Aggregate and count all unique stacks')
+        parser.add_argument('-m', help='show stacks with a function in module M')
+        parser.add_argument('-c', help='show stacks with function C')
+        parser.add_argument('-t', help='show threads with status T') #TODO list optional states
+        parser.add_argument('-f', action='store_true', help='force a refresh of the stacks cache')
         self.parser = parser
         self.stack_map = {}
 
@@ -110,7 +113,6 @@ class Stacks(gdb.Command):
                 stack_info.pretty_print()
                 matching_count += 1
 
-
         print("Total unique stacks:", len(self.stack_map.keys())) # debug
         print("Matching unique stacks:", matching_count)
 
@@ -147,7 +149,11 @@ class Stacks(gdb.Command):
 
     def invoke(self, arg, from_tty):
         argv = gdb.string_to_argv(arg)
-        args = self.parser.parse_args(argv)
+        try:
+            args = self.parser.parse_args(argv)
+        except:
+            self.parser.print_help() #TODO for -h, we end up printing message twice
+            return
 
         if not any(self.stack_map) or args.f:
             self.stack_map = Stacks.build_stack_map()
