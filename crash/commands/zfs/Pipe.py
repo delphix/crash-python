@@ -6,6 +6,17 @@ import argparse
 import traceback
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import parse_type
+import subprocess
+import io
+import sys
+
+
+def print_to_string(*args, **kwargs):
+    output = io.StringIO()
+    print(*args, file=output, **kwargs)
+    contents = output.getvalue()
+    output.close()
+    return contents
 
 class PipeableCommand(gdb.Command):
     allPipeableCommands = {}
@@ -26,6 +37,15 @@ class PipeableCommand(gdb.Command):
 
 
     def invoke(self, argstr, from_tty):
+        shell_cmd = None
+        shell_split = argstr.split('!')
+        argstr = shell_split[0]
+        if len(shell_split) > 2:
+            print("Multiple ! not supported")
+            return
+        elif len(shell_split) == 2:
+            shell_cmd = shell_split[1].strip()
+
         pipe_stages = argstr.split('|')
         input = []
         try:
@@ -49,13 +69,30 @@ class PipeableCommand(gdb.Command):
 
         pipeline[-1].setIsLast()
 
+        if shell_cmd is not None:
+            shell_proc = subprocess.Popen(shell_cmd, shell=True, stdin=subprocess.PIPE, encoding='utf-8')
+            old_stdout = sys.stdout
+            sys.stdout = shell_proc.stdin
+
         try:
             for o in PipeableCommand.executePipeline(input, pipeline):
                 print(o)
+
+            if shell_cmd is not None:
+                shell_proc.stdin.flush()
+                shell_proc.stdin.close()
+
+        except BrokenPipeError:
+            pass
         except Exception as e:
             traceback.print_exc()
             print(e)
             return
+        finally:
+            if shell_cmd is not None:
+                sys.stdout = old_stdout
+                shell_proc.wait()
+
 
     # input should be an iterable of gdb.Value's
     # args should be an array of instances of subclasses of PipeableCommand
