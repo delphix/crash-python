@@ -16,7 +16,7 @@ class ZfsDbgmsgArg():
 
 class ZfsDbgmsg(gdb.Command):
     def __init__(self):
-        super(ZfsDbgmsg, self).__init__("zfs_dbgmsg", gdb.COMMAND_DATA)
+        super().__init__("zfs_dbgmsg", gdb.COMMAND_DATA)
 
     # node is a zfs_dbgmsg_t*
     def print_msg(node : gdb.Value, arg : ZfsDbgmsgArg) -> None:

@@ -9,7 +9,7 @@ from crash.commands.zfs.Pipe import PipeableCommand
 class Avl(PipeableCommand):
     """ walk avl tree """
 
-    def __init__(self):
+    def __init__(self, arg=""):
         super().__init__('avl')
 
     def walk(tree, type=gdb.lookup_type('void').pointer()):

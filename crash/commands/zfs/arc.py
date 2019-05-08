@@ -11,7 +11,7 @@ from crash.commands.zfs.zfs_util import *
 #
 class Arc(gdb.Command):
     def __init__(self):
-        super(Arc, self).__init__("arc", gdb.COMMAND_DATA)
+        super().__init__("arc", gdb.COMMAND_DATA)
 
     def print_arc(self, addr):
         stats = addr.dereference()

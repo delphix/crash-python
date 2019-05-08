@@ -15,8 +15,9 @@ class Print(PipeableCommand):
                 cmd = "(*({}){})".format(i.type, hex(i))
             else:
                 cmd = "({}){}".format(i.type, hex(i))
-            if self.args is not None and len(self.args) > 0:
+            if len(self.args) > 0:
                 cmd += "." + self.args
             #print(cmd)
+            #yield i
             yield gdb.parse_and_eval(cmd)
 Print()

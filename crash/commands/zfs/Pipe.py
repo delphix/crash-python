@@ -43,7 +43,7 @@ class PipeableCommand():
 
 class LineCount(PipeableCommand):
     def __init__(self, arg=""):
-        super(LineCount, self).__init__('wc')
+        super().__init__('wc')
     def call(self, input):
         i = 0
         for o in input:
@@ -53,7 +53,7 @@ LineCount()
 
 class Head(PipeableCommand):
     def __init__(self, arg=""):
-        super(Head, self).__init__('head')
+        super().__init__('head')
         try:
             parser = argparse.ArgumentParser(prog='head')
             parser.add_argument('count', type=int, default=10, nargs='?')
@@ -72,7 +72,7 @@ Head()
 from collections import deque
 class Tail(PipeableCommand):
     def __init__(self, arg=""):
-        super(Tail, self).__init__('tail')
+        super().__init__('tail')
         try:
             parser = argparse.ArgumentParser(prog='tail')
             parser.add_argument('count', type=int, default=10, nargs='?')
@@ -90,7 +90,7 @@ Tail()
 
 class Member(PipeableCommand):
     def __init__(self, arg=""):
-        super(Member, self).__init__('member')
+        super().__init__('member')
         self.args = arg
 
     def call(self, input):
@@ -105,7 +105,7 @@ Member()
 
 class Filter(PipeableCommand):
     def __init__(self, arg=""):
-        super(Filter, self).__init__('filter')
+        super().__init__('filter')
         self.args = arg
 
     def call(self, input):
@@ -119,9 +119,19 @@ class Filter(PipeableCommand):
                 yield i
 Filter()
 
+class Null(PipeableCommand):
+    def __init__(self, arg=""):
+        super().__init__('null')
+
+    def call(self, input):
+        for i in input:
+            pass
+        return []
+Null()
+
 class Pipe(gdb.Command):
     def __init__(self):
-        super(Pipe, self).__init__('pipe', gdb.COMMAND_DATA)
+        super().__init__('pipe', gdb.COMMAND_DATA)
 
     def iterate(self, pipeline):
         if len(pipeline) == 1:
