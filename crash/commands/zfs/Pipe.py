@@ -115,11 +115,12 @@ class PipeableCommand(gdb.Command):
         self.islast = True
 
 class Locator(PipeableCommand):
-    def __init__(self, cmdname, inputTypes={}, outputType=None):
+    def __init__(self, cmdname, inputTypes={}, outputType=None, noInput=None):
         super().__init__(cmdname)
         self.cmdname = cmdname
         self.inputTypes = inputTypes
         self.outputType = outputType
+        self.noInput = noInput
 
     # subclass may override this
     def pretty_print(self, input):
@@ -128,7 +129,9 @@ class Locator(PipeableCommand):
     def caller(self, input):
         baked = [ (parse_type(k).strip_typedefs().unqualified(), f) for k, f in self.inputTypes.items() ]
         out_type = parse_type(self.outputType)
+        hasInput = False
         for i in input:
+            hasInput = True
             found = False
 
             # try subclass-specified input types first
@@ -155,6 +158,9 @@ class Locator(PipeableCommand):
                     self.cmdName,
                     i.type,
                     i_type))
+        if not hasInput:
+            yield from self.noInput()
+
 
     def call(self, input):
         if self.islast and "pretty_print" in dir(self):
