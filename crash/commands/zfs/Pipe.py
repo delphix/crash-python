@@ -127,14 +127,29 @@ class Locator(PipeableCommand):
 
     def caller(self, input):
         baked = [ (parse_type(k).strip_typedefs().unqualified(), f) for k, f in self.inputTypes.items() ]
+        out_type = parse_type(self.outputType)
         for i in input:
-            i_type = i.type.strip_typedefs().unqualified()
             found = False
+
+            # try subclass-specified input types first
+            i_type = i.type.strip_typedefs().unqualified()
             for t, f in baked:
                 if i_type == t:
                     yield from f(i)
                     found = True
                     break
+
+            # try walkers
+            if not found:
+                try:
+                    for o in Walk().call([i]):
+                        o.cast(out_type)
+                        yield o
+                    found = True
+                except TypeError:
+                    pass
+
+            # error
             if not found:
                 raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
                     self.cmdName,
