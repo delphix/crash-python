@@ -2,6 +2,7 @@ import gdb
 from crash.commands import CrashCommandParser
 import argparse
 import os.path
+from crash.types.task import TaskStateFlags as TF
 
 #
 # In terms of organization, this file is very different from the
@@ -24,9 +25,6 @@ import os.path
 # TODO doc string
 # TODO replace wierd constant used to stop unwinding
 # TODO print thread numbers for all matched (-a)
-# TODO figure out if thread state is real - our theory is maybe emulating /proc/pid/status, which gets it's
-# value from the struct task_struct?
-# TODO decide what we want to do about paging
 
 class FrameInfo():
 
@@ -76,7 +74,9 @@ class Stacks(gdb.Command):
         parser.add_argument('-t', help='show threads with status T') #TODO list optional states
         parser.add_argument('-f', action='store_true', help='force a refresh of the stacks cache')
         self.parser = parser
+
         self.stack_map = {}
+        self.task_states = None
 
     def iterate_threads():
         root = gdb.inferiors()[0]
@@ -116,17 +116,35 @@ class Stacks(gdb.Command):
         print("Total unique stacks:", len(self.stack_map.keys())) # debug
         print("Matching unique stacks:", matching_count)
 
-    # TODO can/should we get more fine-grained state information
-    def get_state(thread):
-        if thread.is_running():
-            return "RUNNING"
-        if thread.is_exited():
-            return "EXITED"
-        if thread.is_stopped():
-            return "STOPPED"
+    # TODO can we just use TF?
+    def setup_task_states(self):
+        self.task_states = {
+            TF.TASK_RUNNING         : "RUNNING",
+            TF.TASK_INTERRUPTIBLE   : "INTERRUPTABLE",
+            TF.TASK_UNINTERRUPTIBLE : "UNINTERRUPTABLE",
+            TF.TASK_ZOMBIE          : "ZOMBIE",
+            TF.TASK_STOPPED         : "STOPPED",
+        }
 
-    def build_stack_map():
+        if hasattr(TF, 'TASK_SWAPPING'):
+            self.task_states[TF.TASK_SWAPPING] = "SWAPPING"
+        if hasattr(TF, 'TASK_DEAD'):
+            self.task_states[TF.TASK_DEAD] = "DEAD"
+        if hasattr(TF, 'TASK_TRACING_STOPPED'):
+            self.task_states[TF.TASK_TRACING_STOPPED] = "TRACING_STOPPPED"
+        if hasattr(TF, 'TASK_IDLE'):
+            self.task_states[TF.TASK_IDLE] = "IDLE"
+
+    def get_state(self, thread):
+        state = thread.info.task_state()
+        for bits in sorted(self.task_states.keys(), reverse=True):
+            if (state & bits) == bits:
+                return self.task_states[bits]
+        return "unknown"
+
+    def build_stack_map(self):
        stack_map = {}
+
        for thread in Stacks.iterate_threads():
            trace_lines=[]
            frame = gdb.newest_frame()
@@ -144,7 +162,7 @@ class Stacks(gdb.Command):
                    module = os.path.splitext(os.path.basename(frame.function().symtab.objfile.filename))[0]
                    trace_lines.append(FrameInfo(function_name, offset, module))
                frame = frame.older()
-           Stacks.insert(stack_map, trace_lines, Stacks.get_state(thread), thread.num)
+           Stacks.insert(stack_map, trace_lines, self.get_state(thread), thread.num)
        return stack_map
 
     def invoke(self, arg, from_tty):
@@ -155,8 +173,11 @@ class Stacks(gdb.Command):
             self.parser.print_help() #TODO for -h, we end up printing message twice
             return
 
+        if self.task_states is None:
+            self.setup_task_states()
+
         if not any(self.stack_map) or args.f:
-            self.stack_map = Stacks.build_stack_map()
+            self.stack_map = self.build_stack_map()
 
         print("THREAD   STATE                          COUNT")
         print("=============================================")
