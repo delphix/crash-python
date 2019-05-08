@@ -11,7 +11,7 @@ from crash.commands.zfs.cast import Cast
 from crash.commands.zfs.vdev import Vdev
 
 class Spa(PipeableCommand):
-    def __init__(self, arg=""):
+    def __init__(self, arg="", inputType="spa_t*"):
         super().__init__('spa')
         parser = argparse.ArgumentParser(description = "spa command")
         parser.add_argument('-v', '--vdevs',action='store_true',
@@ -23,7 +23,6 @@ class Spa(PipeableCommand):
         self.args = parser.parse_args(gdb.string_to_argv(arg))
 
     def print_spa(self, spa):
-        spa = spa.cast(gdb.lookup_type('spa_t').pointer())
         print("{:14} {}".format(hex(spa), spa['spa_name'].string()))
         if self.args.vdevs:
             vdev = Vdev()
