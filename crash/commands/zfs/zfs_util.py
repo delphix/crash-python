@@ -3,7 +3,9 @@
 
 import gdb
 import argparse
+import os.path
 from typing import Callable, Any
+from os.path import commonprefix
 
 def symbol_address(symbol, typename="void"):
     type = gdb.lookup_type(typename).pointer()
@@ -26,9 +28,13 @@ def offsetof(name : str, field_name : str) -> int:
         return field.bitpos / 8
     return -1
 
-def enum_lookup(type, field):
-    val = gdb.lookup_type(type).fields()[field].name
-    return val.split('_', 2)[-1]
+
+def enum_lookup(enum_type_name, value):
+    """ return a string which is the short name of the enum value
+    (truncating off the common prefix """
+    fields = gdb.lookup_type(enum_type_name).fields()
+    prefix = os.path.commonprefix([ f.name for f in fields ])
+    return fields[value].name[prefix.rfind('_')+1:]
 
 def parse_type(typestr):
     typestr = typestr.strip()
