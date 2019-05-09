@@ -114,56 +114,73 @@ class PipeableCommand(gdb.Command):
     def setIsLast(self):
         self.islast = True
 
+#
+# A Locator is a command that locates objects of a given type.
+# Subclasses declare that they produce a given outputType
+# (the type being located), and they provide a method for each
+# input type that they can search for objects of this type.
+# Additionally, subclasses can pretty-print the given outputType.
+#
 class Locator(PipeableCommand):
-    def __init__(self, cmdname, inputTypes={}, outputType=None, noInput=None):
+    allLocators = {}
+
+    def __init__(self, cmdname, outputType, inputTypes={}):
         super().__init__(cmdname)
-        self.cmdname = cmdname
-        self.inputTypes = inputTypes
         self.outputType = outputType
-        self.noInput = noInput
+        self.inputTypes = inputTypes
+        Locator.allLocators[outputType] = type(self)
+
+    # subclass may provide this
+    #def pretty_print(self, input):
+    #    raise NotImplementedError
 
     # subclass may override this
-    def pretty_print(self, input):
-        raise NotImplementedError
+    def noInput(self):
+        raise TypeError('command "{}" requires an input'.format(
+            self.cmdName))
 
     def caller(self, input):
         baked = [ (parse_type(k).strip_typedefs().unqualified(), f) for k, f in self.inputTypes.items() ]
         out_type = parse_type(self.outputType)
         hasInput = False
         for i in input:
-            hasInput = True
-            found = False
-
-            # try subclass-specified input types first
             i_type = i.type.strip_typedefs().unqualified()
-            for t, f in baked:
-                if i_type == t:
-                    yield from f(i)
-                    found = True
-                    break
+            hasInput = True
+
+            # try subclass-specified input types first, so that they can override any other behavior
+            try:
+                for t, f in baked:
+                    if i_type == t:
+                        yield from f(i)
+                        raise StopIteration
+            except StopIteration:
+                continue
+
+            # try passthrough of output type
+            # note, this may also be handled by subclass-specified input types
+            if i_type == out_type:
+                yield i
+                continue
 
             # try walkers
-            if not found:
-                try:
-                    for o in Walk().call([i]):
-                        o.cast(out_type)
-                        yield o
-                    found = True
-                except TypeError:
-                    pass
+            try:
+                for o in Walk().call([i]):
+                    o.cast(out_type)
+                    yield o
+                continue
+            except TypeError:
+                pass
 
             # error
-            if not found:
-                raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
-                    self.cmdName,
-                    i.type,
-                    i_type))
+            raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
+                self.cmdName,
+                i.type,
+                i_type))
         if not hasInput:
             yield from self.noInput()
 
-
     def call(self, input):
-        if self.islast and "pretty_print" in dir(self):
+        if self.islast and hasattr(self, "pretty_print"):
             self.pretty_print(self.caller(input))
         else:
             yield from self.caller(input)
@@ -185,26 +202,78 @@ class AbstractContainer(PipeableCommand):
         for i in input:
             yield from self.walk(i)
 
-
+# XXX it would be nice if we could make this a Locator, and rely on the logic in there
+# XXX to handle the input type matching.  Unfortunately I think we'd have to ensure
+# XXX that this gets instantiated last (after Locator.allLocators is fully populated)
 class Walk(PipeableCommand):
     def __init__(self, arg=""):
         super().__init__('walk')
 
     def call(self, input):
         baked = [ (parse_type(k).strip_typedefs().unqualified(), c) for k, c in AbstractContainer.allAbstractContainers.items() ]
+        hasInput = False
         for i in input:
+            hasInput = True
             i_type = i.type.strip_typedefs().unqualified()
-            found = False
+
+            try:
+                for t, c in baked:
+                    if i_type == t:
+                        yield from c().walk(i)
+                        raise StopIteration
+            except StopIteration:
+                continue
+
+            raise TypeError('no walker found for input of type {} (base type {})'.format(
+                i.type,
+                i_type))
+        if not hasInput:
+            print("The following types have walkers:")
+            print("\t%-20s %-20s" % ("WALKER", "TYPE"))
             for t, c in baked:
-                if i_type == t:
-                    yield from c().walk(i)
-                    found = True
-                    break
-            if not found:
-                raise TypeError('no walker found for input of type {} (base type {})'.format(
-                    i.type,
-                    i_type))
+                print("\t%-20s %-20s" % (c().cmdName, t))
+            raise TypeError('no input given to walk')
 Walk()
+
+# find a Locator whose outputType matches our input, and call its pretty_print()
+# XXX it would be nice if we could make this a Locator, and rely on the logic in there
+# XXX to handle the input type matching.  Unfortunately I think we'd have to ensure
+# XXX that this gets instantiated last (after Locator.allLocators is fully populated)
+class PrettyPrint(PipeableCommand):
+    def __init__(self, arg=""):
+        super().__init__('pp')
+
+    def call(self, input):
+        baked = [ (parse_type(t).strip_typedefs().unqualified(), c) for t, c in Locator.allLocators.items() ]
+        hasInput = False
+        for i in input:
+            hasInput = True
+            i_type = i.type.strip_typedefs().unqualified()
+
+            try:
+                for t, c in baked:
+                    if i_type == t and hasattr(c, "pretty_print"):
+                        if not self.islast:
+                            yield i
+                        c().pretty_print([i])
+                        raise StopIteration
+            except StopIteration:
+                continue
+
+            # error
+            raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
+                self.cmdName,
+                i.type,
+                i_type))
+        if not hasInput:
+            print("The following types have pretty-printers:")
+            print("\t%-20s %-20s" % ("PRINTER", "TYPE"))
+            for t, c in baked:
+                if hasattr(c, "pretty_print"):
+                    print("\t%-20s %-20s" % (c().cmdName, t))
+            raise TypeError('no input given to pp')
+
+PrettyPrint()
 
 class Pipe(gdb.Command):
     def __init__(self):
