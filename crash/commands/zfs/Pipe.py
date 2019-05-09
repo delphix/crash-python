@@ -151,6 +151,12 @@ class Locator(PipeableCommand):
             try:
                 for t, f in baked:
                     if i_type == t:
+                        for o in f(i):
+                            if o.type.strip_typedefs().unqualified() != out_type:
+                                raise TypeError('command "{}" should output {} but we got {}'.format(
+                                    self.cmdName,
+                                    out_type, o.type))
+                            yield o
                         yield from f(i)
                         raise StopIteration
             except StopIteration:
@@ -165,17 +171,28 @@ class Locator(PipeableCommand):
             # try walkers
             try:
                 for o in Walk().call([i]):
-                    o.cast(out_type)
-                    yield o
+                    yield o.cast(out_type)
                 continue
             except TypeError:
                 pass
 
+            # "void *" is assumed to be the output type
+            if i_type.code is gdb.TYPE_CODE_PTR and i_type.target().code is gdb.TYPE_CODE_VOID:
+                yield i.cast(out_type)
+                continue
+
+            # integers are assumed to be the output type
+            if i_type.code is gdb.TYPE_CODE_INT:
+                yield i.cast(out_type)
+                continue
+
             # error
-            raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
+            print('command "{}" handles input of the following types:'.format(self.cmdName))
+            for t, f in baked:
+                print('    {}'.format(t))
+            raise TypeError('command "{}" does not handle input of type {}'.format(
                 self.cmdName,
-                i.type,
-                i_type))
+                i.type))
         if not hasInput:
             yield from self.noInput()
 
@@ -224,9 +241,8 @@ class Walk(PipeableCommand):
             except StopIteration:
                 continue
 
-            raise TypeError('no walker found for input of type {} (base type {})'.format(
-                i.type,
-                i_type))
+            raise TypeError('no walker found for input of type {}'.format(
+                i.type))
         if not hasInput:
             print("The following types have walkers:")
             print("\t%-20s %-20s" % ("WALKER", "TYPE"))
@@ -261,10 +277,9 @@ class PrettyPrint(PipeableCommand):
                 continue
 
             # error
-            raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
+            raise TypeError('command "{}" does not handle input of type {}'.format(
                 self.cmdName,
-                i.type,
-                i_type))
+                i.type))
         if not hasInput:
             print("The following types have pretty-printers:")
             print("\t%-20s %-20s" % ("PRINTER", "TYPE"))
