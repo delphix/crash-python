@@ -48,3 +48,22 @@ def parse_type(typestr):
         ptr_count -= 1
         val = val.pointer()
     return val
+
+def print_histogram(histogram, size, offset):
+    max_data = 0
+    maxidx = 0
+    minidx = size - 1
+
+    for i in range(0, size):
+        if (histogram[i] > max_data):
+            max_data = histogram[i]
+        if (histogram[i] > 0 and i > maxidx):
+            maxidx = i
+        if (histogram[i] > 0 and i < minidx):
+            minidx = i
+    if (max_data < 40):
+        max_data = 40
+
+    for i in range(minidx, maxidx + 1):
+        print("%3u: %6u %s" % (i + offset, histogram[i],
+            '*' * int(histogram[i])))
