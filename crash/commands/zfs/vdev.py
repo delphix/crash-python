@@ -6,6 +6,7 @@ import argparse
 from crash.commands.zfs.Pipe import Locator, PipeableCommand
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import enum_lookup
+from crash.commands.zfs.metaslab import Metaslab
 
 class Vdev(Locator):
     def __init__(self, args = ""):
