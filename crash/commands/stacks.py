@@ -149,6 +149,8 @@ class Stacks(gdb.Command):
            trace_lines=[]
            frame = gdb.newest_frame()
            while (frame != None):
+               if frame.unwind_stop_reason() != 0:
+                   break
                if frame.pc() < 0xffff000000000000: # Hack
                    break
                if (frame.function() is None):
