@@ -31,7 +31,7 @@ class Session(object):
 
     def __init__(self, vmlinux_debuginfo=None, modules=None,
                  modules_debuginfo=None, debug=False):
-        print("crash-python initializing...")
+        print("Slick Debugger (sdb) initializing...")
         self.kernel = kernel(vmlinux_debuginfo=vmlinux_debuginfo,
                              module_path=modules,
                              module_debuginfo_path=modules_debuginfo)

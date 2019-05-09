@@ -130,7 +130,7 @@ cat << EOF >> $GDBINIT
 set debug-file-directory $PWD/kroot/usr/lib/debug:/usr/lib/debug
 set build-id-verbose 0
 set python print-stack full
-set prompt py-crash> 
+set prompt sdb> 
 set height 0
 set print pretty on
 
