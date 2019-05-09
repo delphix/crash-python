@@ -1,26 +1,13 @@
 import gdb
-from crash.commands import CrashCommandParser
 import argparse
 import os.path
-from crash.types.task import TaskStateFlags as TF
 
-#
-# In terms of organization, this file is very different from the
-# other files in the command/ subdirectory. It doesn't build all
-# the Python abstractions created by pycrash and uses the plain
-# GDB API mainly for two reasons:
-#
-# [1] We can reuse this file when running gdb against a userland
-#     core dump from ztest.
-#
-# [2] We don't need to redeclare types and symbols in Python for
-#     every command we write as forced by the CrashCommand model.
-#     The benefits of this is that [a] development of new code
-#     through `python-interactive` is easier (no need to declare
-#     classes), [b] common functions like gen() and walkers can
-#     be reused between commands in a straightforward manner.
-#
-#
+try:
+    from crash.types.task import TaskStateFlags as TF
+    kernel = True
+except ImportError:
+    kernel = False
+
 
 # TODO doc string
 # TODO replace wierd constant used to stop unwinding
@@ -68,7 +55,7 @@ class Stacks(gdb.Command):
     def __init__(self):
         name = "stacks"
         super(Stacks, self).__init__(name, gdb.COMMAND_DATA)
-        parser = CrashCommandParser(prog=name,description='Aggregate and count all unique stacks')
+        parser = argparse.ArgumentParser(prog=name,description='Aggregate and count all unique stacks')
         parser.add_argument('-m', help='show stacks with a function in module M')
         parser.add_argument('-c', help='show stacks with function C')
         parser.add_argument('-t', help='show threads with status T') #TODO list optional states
@@ -116,56 +103,83 @@ class Stacks(gdb.Command):
         print("Total unique stacks:", len(self.stack_map.keys())) # debug
         print("Matching unique stacks:", matching_count)
 
-    # TODO can we just use TF?
-    def setup_task_states(self):
-        self.task_states = {
-            TF.TASK_RUNNING         : "RUNNING",
-            TF.TASK_INTERRUPTIBLE   : "INTERRUPTABLE",
-            TF.TASK_UNINTERRUPTIBLE : "UNINTERRUPTABLE",
-            TF.TASK_ZOMBIE          : "ZOMBIE",
-            TF.TASK_STOPPED         : "STOPPED",
-        }
-
-        if hasattr(TF, 'TASK_SWAPPING'):
-            self.task_states[TF.TASK_SWAPPING] = "SWAPPING"
-        if hasattr(TF, 'TASK_DEAD'):
-            self.task_states[TF.TASK_DEAD] = "DEAD"
-        if hasattr(TF, 'TASK_TRACING_STOPPED'):
-            self.task_states[TF.TASK_TRACING_STOPPED] = "TRACING_STOPPPED"
-        if hasattr(TF, 'TASK_IDLE'):
-            self.task_states[TF.TASK_IDLE] = "IDLE"
-
     def get_state(self, thread):
-        state = thread.info.task_state()
-        for bits in sorted(self.task_states.keys(), reverse=True):
-            if (state & bits) == bits:
-                return self.task_states[bits]
-        return "unknown"
+        # TODO figure out what the possible states are in the __init__ method
+        # so that we can print them out with the command's help message
+        if kernel:
+            #
+            # Use logic from crash-python to help us get more accurate thread state
+            # info for kernel dumps.
+            #
+            if self.task_states is None:
+                self.task_states = {
+                    TF.TASK_RUNNING         : "RUNNING",
+                    TF.TASK_INTERRUPTIBLE   : "INTERRUPTABLE",
+                    TF.TASK_UNINTERRUPTIBLE : "UNINTERRUPTABLE",
+                    TF.TASK_ZOMBIE          : "ZOMBIE",
+                    TF.TASK_STOPPED         : "STOPPED",
+                }
+
+                if hasattr(TF, 'TASK_SWAPPING'):
+                    self.task_states[TF.TASK_SWAPPING] = "SWAPPING"
+                if hasattr(TF, 'TASK_DEAD'):
+                    self.task_states[TF.TASK_DEAD] = "DEAD"
+                if hasattr(TF, 'TASK_TRACING_STOPPED'):
+                    self.task_states[TF.TASK_TRACING_STOPPED] = "TRACING_STOPPPED"
+                if hasattr(TF, 'TASK_IDLE'):
+                    self.task_states[TF.TASK_IDLE] = "IDLE"
+
+            state = thread.info.task_state()
+            for bits in sorted(self.task_states.keys(), reverse=True):
+                if (state & bits) == bits:
+                    return self.task_states[bits]
+            return "UNKNOWN"
+        else:
+            #
+            # For userspace dumps, fall back to using generic GDB functiontality
+            # for understanding thread state. Unfortunately, for core dumps, GDB
+            # seems to say that all threads are stopped instead of saying what the
+            # state was when the core was taken.
+            #
+            if thread.is_running():
+                return "RUNNING"
+            if thread.is_exited():
+                return "EXITED"
+            if thread.is_stopped():
+                return "STOPPED"
+            return "UNKNOWN"
 
     def build_stack_map(self):
-       stack_map = {}
+        stack_map = {}
 
-       for thread in Stacks.iterate_threads():
-           trace_lines=[]
-           frame = gdb.newest_frame()
-           while (frame != None):
-               if frame.unwind_stop_reason() != 0:
-                   break
-               if frame.pc() < 0xffff000000000000: # Hack
-                   break
-               if (frame.function() is None):
-                   function_name = frame.name()
-                   if function_name is None:
-                       function_name = hex(frame.pc())
-                   trace_lines.append(FrameInfo(function_name, None, ""))
-               else:
-                   function_name = frame.function().print_name
-                   offset = hex(int(frame.pc()) - int(frame.function().value().address))
-                   module = os.path.splitext(os.path.basename(frame.function().symtab.objfile.filename))[0]
-                   trace_lines.append(FrameInfo(function_name, offset, module))
-               frame = frame.older()
-           Stacks.insert(stack_map, trace_lines, self.get_state(thread), thread.num)
-       return stack_map
+        for thread in Stacks.iterate_threads():
+            valid = True
+            trace_lines=[]
+            frame = gdb.newest_frame()
+            while (frame != None):
+                try:
+                    frame.pc()
+                except:
+                    valid = False
+                    break
+                if kernel and frame.pc() < 0xffff000000000000: # Hack
+                    break
+                if (frame.function() is None):
+                    function_name = frame.name()
+                    if function_name is None:
+                        function_name = hex(frame.pc())
+                    trace_lines.append(FrameInfo(function_name, None, ""))
+                else:
+                    function_name = frame.function().print_name
+                    offset = hex(int(frame.pc()) - int(frame.function().value().address))
+                    module = os.path.splitext(os.path.basename(frame.function().symtab.objfile.filename))[0]
+                    trace_lines.append(FrameInfo(function_name, offset, module))
+                frame = frame.older()
+            if valid:
+                Stacks.insert(stack_map, trace_lines, self.get_state(thread), thread.num)
+            else:
+                print("invalid thread: ", thread.num)
+        return stack_map
 
     def invoke(self, arg, from_tty):
         argv = gdb.string_to_argv(arg)
@@ -174,9 +188,6 @@ class Stacks(gdb.Command):
         except:
             self.parser.print_help() #TODO for -h, we end up printing message twice
             return
-
-        if self.task_states is None:
-            self.setup_task_states()
 
         if not any(self.stack_map) or args.f:
             self.stack_map = self.build_stack_map()
