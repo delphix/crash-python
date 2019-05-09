@@ -20,11 +20,12 @@ class Refcount(PipeableCommand):
                                                                hex(cast_ref['ref_holder'])))
         
     def print_refcount(self, refcnt):
-        for field in gdb.lookup_type('zfs_refcount_t'):
-            if field.name != 'rc_count':
-                self.args.debug = True
-                return
-        self.args.debug = False
+        if not hasattr(self.args, 'debug'):
+            self.args.debug = False
+            for field in gdb.lookup_type('zfs_refcount_t'):
+                if field.name != 'rc_count':
+                    self.args.debug = True
+                    break
         print('zfs_refcount_t at {} has {:d} holds{} ({})'.format(hex(refcnt), int(refcnt['rc_count']),
                                                                   (', {:d} removed'.format(refcnt['rc_removed_count']) if self.args.removed else ''),
                                                                   ('tracked' if self.args.debug and refcnt['rc_tracked'] else 'untracked')))
