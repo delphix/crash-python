@@ -25,8 +25,8 @@ def offsetof(name : str, field_name : str) -> int:
     for field in typ.fields():
         if field.name != field_name:
             continue
-        return field.bitpos / 8
-    return -1
+        return int(field.bitpos / 8)
+    return int(-1)
 
 
 def enum_lookup(enum_type_name, value):
