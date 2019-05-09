@@ -319,6 +319,15 @@ class Coerce(PipeableCommand):
             yield self.coerce(i)
 Coerce()
 
+class Type(PipeableCommand):
+    def __init__(self, arg=""):
+        super().__init__('type')
+    def call(self, input):
+        for o in input:
+            print(o.type)
+            yield o
+Type()
+
 class LineCount(PipeableCommand):
     def __init__(self, arg=""):
         super().__init__('wc')
