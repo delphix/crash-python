@@ -38,12 +38,24 @@ class Spa(PipeableCommand):
             input = PipeableCommand.executePipeline(
                     [symbol_address("spa_namespace_avl")],
                     [Avl(), Cast('spa_t *')])
+        hasInput = False
         if self.islast:
-            print("{:14} {}".format("ADDR", "NAME"))
-            print("----------------------------------------")
             for spa in input:
+                if not hasInput:
+                    print("{:14} {}".format("ADDR", "NAME"))
+                    print("----------------------------------------")
+                hasInput = True
                 self.print_spa(spa)
         else:
-            yield from input
+            for spa in input:
+                hasInput = True
+                yield spa
+        if not hasInput:
+            yield from self.call(PipeableCommand.executePipeline(
+                    [symbol_address("spa_namespace_avl")],
+                    [Avl(), Cast('spa_t*')]))
+            #yield from PipeableCommand.executePipeline(
+            #        [symbol_address("spa_namespace_avl")],
+            #        [Avl(), Spa()])
 
 Spa()
