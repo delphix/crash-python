@@ -5,11 +5,9 @@
 #
 
 import gdb
-import argparse
 from crash.commands.zfs.Pipe import PipeableCommand
-from typing import Callable, Any
 from crash.commands.zfs.zfs_util import symbol_address
-from crash.commands.zfs.cast import Cast
+from crash.commands.zfs.zfs_util import enum_lookup
 
 SPA_MINBLOCKSHIFT = 9
 
@@ -58,10 +56,6 @@ BP_PHYSICAL_BIRTH = lambda bp : 0 if BP_IS_EMBEDDED(bp) else bp['blk_phys_birth'
 BP_GET_FILL =       lambda bp : 1 if BP_IS_EMBEDDED(bp) else bp['blk_fill'] 
 
 
-def enum_lookup(type, field):
-    val = gdb.lookup_type(type).fields()[field].name
-    return val.split('_', 2)[-1]
-
 class Blkptr(PipeableCommand):
     """pretty print a zfs blkptr_t
 
@@ -72,8 +66,8 @@ SYNOPSIS
   cast blkptr_t* <address> | blkptr
   """
 
-    def __init__(self, arg="", inputType="blkptr_t*"):
-        super().__init__('blkptr')
+    def __init__(self, arg=""):
+        super().__init__('blkptr', inputType="blkptr_t*")
 
     def print_blkptr_hole(bp, type):
         print("HOLE [L{:d} {}] size={:x}L birth={}L".format(

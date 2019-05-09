@@ -11,8 +11,8 @@ from crash.commands.zfs.cast import Cast
 from crash.commands.zfs.vdev import Vdev
 
 class Spa(PipeableCommand):
-    def __init__(self, arg="", inputType="spa_t*"):
-        super().__init__('spa')
+    def __init__(self, arg=""):
+        super().__init__('spa', inputType="spa_t*")
         parser = argparse.ArgumentParser(description = "spa command")
         parser.add_argument('-v', '--vdevs',action='store_true',
                 help='vdevs flag' )

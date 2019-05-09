@@ -93,7 +93,7 @@ class PipeableCommand(gdb.Command):
                 shell_proc.wait()
 
 
-    # input should be an iterable of gdb.Value's
+    # first_input should be an iterable of gdb.Value's
     # args should be an array of instances of subclasses of PipeableCommand
     def executePipeline(first_input, args):
         # if this stage wants its input in a certain type, insert a
