@@ -4,16 +4,18 @@
 import gdb
 import argparse
 from crash.commands.zfs.zfs_util import symbol_address
-from crash.commands.zfs.Pipe import Locator
-from crash.commands.zfs.Pipe import PipeableCommand
-from crash.commands.zfs.Pipe import Walk
+from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.locator import Locator
+from crash.commands.walk import Walk
 from crash.commands.zfs.cast import Cast
 
 class Dbuf(Locator):
+    cmdName = 'dbuf'
+    outputType = 'dmu_buf_impl_t *'
+
     def __init__(self, arg=""):
-        super().__init__('dbuf',
-                outputType='dmu_buf_impl_t*',
-                inputTypes={'dnode_t*': self.dbufs_from_dnode})
+        super().__init__()
+        self.inputTypes={'dnode_t *': self.dbufs_from_dnode}
         parser = argparse.ArgumentParser(prog='dbuf')
         parser.add_argument('-l', '--level', type=int,
                 help='filter: only dbufs of this level' )
@@ -50,7 +52,7 @@ class Dbuf(Locator):
     # dn is gdb.Value of type dnode_t*
     # need to yield gdb.Value's of type dmu_buf_impl_t*
     def dbufs_from_dnode(self, dn):
-        for db in PipeableCommand.executePipeline(
+        for db in SDBCommand.executePipeline(
                 [dn['dn_dbufs'].address],
                 [Walk(), Cast('dmu_buf_impl_t*')]):
             yield db
@@ -67,5 +69,5 @@ class Dbuf(Locator):
                     yield db
                 db = db['db_hash_next']
 
-Dbuf()
+registerSDBCommand(Dbuf)
 

@@ -3,16 +3,22 @@
 
 import gdb
 import argparse
-from crash.commands.zfs.Pipe import Locator, PipeableCommand
+from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.locator import Locator
+from crash.commands.pretty_printer import PrettyPrinter
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import enum_lookup
 from crash.commands.zfs.metaslab import Metaslab
 
-class Vdev(Locator):
+class Vdev(Locator, PrettyPrinter):
+    cmdName = 'vdev'
+    inputType = 'vdev_t *'
+    outputType = 'vdev_t *'
+
     def __init__(self, args = ""):
-        super().__init__("vdev",
-                outputType="vdev_t*",
-                inputTypes={"spa_t *": self.vdevs_from_spa, "vdev_t*": self.vdevs_from_vdev})
+        super().__init__()
+        self.inputTypes = {'spa_t *': self.vdevs_from_spa,
+                           'vdev_t *': self.vdevs_from_vdev}
         # XXX add flag for "direct children (from vdev) only"?
         # XXX add flag for "top level vdevs (from spa) only"?
         try:
@@ -53,7 +59,7 @@ class Vdev(Locator):
                      vdev['vdev_ops']['vdev_op_type'].string())
                 level = 2
             if self.args.metaslab:
-                metaslabs = PipeableCommand.executePipeline( [vdev], [Metaslab()])
+                metaslabs = SDBCommand.executePipeline( [vdev], [Metaslab()])
                 Metaslab(self.arg_string).pretty_print(metaslabs, indent + 5)
 
 
@@ -70,4 +76,4 @@ class Vdev(Locator):
             cvd = vdev['vdev_child'][cid]
             yield from self.vdevs_from_vdev(cvd)
 
-Vdev()
+registerSDBCommand(Vdev)

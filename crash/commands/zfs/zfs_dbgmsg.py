@@ -6,7 +6,7 @@ from typing import Callable, Any
 from crash.commands.zfs.zfs_util import symbol_address
 from crash.commands.zfs.list import List
 from crash.commands.zfs.cast import Cast
-from crash.commands.zfs.Pipe import PipeableCommand
+from crash.commands.sdb import SDBCommand
 import datetime,getopt
 
 class ZfsDbgmsgArg():
@@ -50,7 +50,7 @@ class ZfsDbgmsg(gdb.Command):
         zda = ZfsDbgmsgArg(verbosity >= 1, verbosity >= 2)
         proc_list = symbol_address("zfs_dbgmsgs")
         list_addr = proc_list['pl_list'].address
-        for node in PipeableCommand.executePipeline([list_addr], [List(), Cast('zfs_dbgmsg_t *')]):
+        for node in SDBCommand.executePipeline([list_addr], [List(), Cast('zfs_dbgmsg_t *')]):
             ZfsDbgmsg.print_msg(node, zda)
 
 ZfsDbgmsg()

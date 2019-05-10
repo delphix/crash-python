@@ -4,13 +4,16 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from crash.commands.zfs.Pipe import AbstractContainer
+from crash.commands.sdb import registerSDBCommand
+from crash.commands.walk import Walker
 
-class List(AbstractContainer):
+class List(Walker):
     """ walk list """
 
+    cmdName = 'list'
+    inputType = 'list_t *'
     def __init__(self, arg=""):
-        super().__init__('list', inputType='list_t*')
+        super().__init__()
 
     def walk(self, list):
         offset = int(list['list_offset'])
@@ -20,13 +23,15 @@ class List(AbstractContainer):
             yield gdb.Value(int(node) - offset).cast(gdb.lookup_type('void').pointer())
             node = node['next']
 
-List()
+registerSDBCommand(List)
 
-class LinuxList(AbstractContainer):
+class LinuxList(Walker):
     """ walk linux list_head """
 
+    cmdName = 'linux_list'
+    inputType = 'struct list_head *'
     def __init__(self, arg=""):
-        super().__init__('linux_list', inputType='struct list_head *')
+        super().__init__()
         parser = argparse.ArgumentParser(description = "walk a linux list")
         parser.add_argument('offset', default=0, type=int, nargs='?', help='offset of list_head in structure')
         self.args = parser.parse_args(gdb.string_to_argv(arg))
@@ -36,4 +41,5 @@ class LinuxList(AbstractContainer):
         while node != llist:
             yield gdb.Value(int(node) - self.args.offset).cast(gdb.lookup_type('void').pointer())
             node = node['next']
-LinuxList()
+
+registerSDBCommand(LinuxList)

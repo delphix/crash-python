@@ -3,17 +3,23 @@
 
 import gdb
 import argparse
-from crash.commands.zfs.Pipe import Locator, PipeableCommand
-from typing import Callable, Any
-from crash.commands.zfs.zfs_util import symbol_address
+from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.locator import Locator
+from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.avl import Avl
 from crash.commands.zfs.cast import Cast
 from crash.commands.zfs.vdev import Vdev
 from crash.commands.zfs.metaslab import Metaslab
+from crash.commands.zfs.zfs_util import symbol_address
 
-class Spa(Locator):
+class Spa(Locator, PrettyPrinter):
+    cmdName = 'spa'
+    inputType = 'spa_t *'
+    outputType = 'spa_t *'
+
     def __init__(self, args=""):
-        super().__init__('spa', outputType="spa_t*")
+        super().__init__()
+        self.inputTypes = {}
         try:
             parser = argparse.ArgumentParser(description = "spa command")
             parser.add_argument('-v', '--vdevs',action='store_true',
@@ -38,15 +44,15 @@ class Spa(Locator):
         for spa in spas:
             print("{:14} {}".format(hex(spa), spa['spa_name'].string()))
             if self.args.vdevs:
-                vdevs = PipeableCommand.executePipeline(
+                vdevs = SDBCommand.executePipeline(
                         [spa], [Vdev()])
                 Vdev(self.arg_string).pretty_print(vdevs, 5)
 
     def noInput(self):
-        input = PipeableCommand.executePipeline(
+        input = SDBCommand.executePipeline(
                 [symbol_address("spa_namespace_avl")],
                 [Avl(), Cast('spa_t *')])
         for spa in input:
             yield spa
 
-Spa()
+registerSDBCommand(Spa)

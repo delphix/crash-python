@@ -4,14 +4,16 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from crash.commands.zfs.Pipe import PipeableCommand
+from crash.commands.sdb import registerSDBCommand
+from crash.commands.sdb import PipeableCommand
 from crash.commands.zfs.zfs_util import parse_type
 
 class Cast(PipeableCommand):
     """ walk list """
 
+    cmdName = 'cast'
     def __init__(self, arg=""):
-        super().__init__('cast')
+        super().__init__()
 
         try:
             parser = argparse.ArgumentParser(prog='cast')
@@ -22,9 +24,8 @@ class Cast(PipeableCommand):
 
         self.args.cast_type = parse_type(' '.join(self.args.cast_type))
 
-
     def call(self, input):
         for listaddr in input:
             yield listaddr.cast(self.args.cast_type)
 
-Cast()
+registerSDBCommand(Cast)

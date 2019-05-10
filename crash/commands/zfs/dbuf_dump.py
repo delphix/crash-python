@@ -11,7 +11,7 @@ class DBuf(gdb.Command):
         super(DBuf, self).__init__('dbuf_dump', gdb.COMMAND_DATA)
 
     def invoke(self, argstr, from_tty):
-        parser = argparse.ArgumentParser(prog='list')
+        parser = argparse.ArgumentParser(prog='dbuf_dump')
         parser.add_argument('addr')
         args = parser.parse_args(gdb.string_to_argv(argstr))
         dbuf_addr = gdb.Value(int(args.addr, 0))

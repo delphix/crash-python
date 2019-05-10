@@ -4,12 +4,15 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from crash.commands.zfs.Pipe import PipeableCommand
+from crash.commands.sdb import registerSDBCommand
+from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.list import List
 
-class Refcount(PipeableCommand):
+class Refcount(PrettyPrinter):
+    cmdName = 'refcount'
+    inputType = 'zfs_refcount_t *'
     def __init__(self, arg=""):
-        super().__init__('refcount', inputType="zfs_refcount_t *")
+        super().__init__()
         parser = argparse.ArgumentParser(description = "print refcounts")
         parser.add_argument('-r', '--removed',action='store_true',
                             help='print removed refcounts' )
@@ -19,7 +22,7 @@ class Refcount(PipeableCommand):
         print('{}reference with count={:d} with tag {}'.format(('removed ' if removed else ''), cast_ref['ref_number'],
                                                                hex(cast_ref['ref_holder'])))
         
-    def print_refcount(self, refcnt):
+    def pretty_print(self, refcnt):
         if not hasattr(self.args, 'debug'):
             self.args.debug = False
             for field in gdb.lookup_type('zfs_refcount_t'):
@@ -43,9 +46,5 @@ class Refcount(PipeableCommand):
             cast_ref = ref.cast(gdb.lookup_type('reference_t')).pointer()
             self.print_reference(cast_remove, removed=True)
 
-    def call(self, inputs):
-        for i in inputs:
-            self.print_refcount(i)
-        return []
 
-Refcount()
+registerSDBCommand(Refcount)

@@ -5,7 +5,8 @@
 #
 
 import gdb
-from crash.commands.zfs.Pipe import PipeableCommand
+from crash.commands.sdb import registerSDBCommand
+from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.zfs_util import enum_lookup
 
 SPA_MINBLOCKSHIFT = 9
@@ -55,7 +56,7 @@ BP_PHYSICAL_BIRTH = lambda bp : 0 if BP_IS_EMBEDDED(bp) else bp['blk_phys_birth'
 BP_GET_FILL =       lambda bp : 1 if BP_IS_EMBEDDED(bp) else bp['blk_fill'] 
 
 
-class Blkptr(PipeableCommand):
+class Blkptr(PrettyPrinter):
     """pretty print a zfs blkptr_t
 
 NAME
@@ -65,8 +66,10 @@ SYNOPSIS
   cast blkptr_t* <address> | blkptr
   """
 
+    cmdName = 'blkptr'
+    inputType = 'blkptr_t *'
     def __init__(self, arg=""):
-        super().__init__('blkptr', inputType="blkptr_t*")
+        super().__init__()
 
     def print_blkptr_hole(bp, type):
         print("HOLE [L{:d} {}] size={:x}L birth={}L".format(
@@ -128,7 +131,7 @@ SYNOPSIS
             int(bp['blk_cksum']['zc_word'][2]),
             int(bp['blk_cksum']['zc_word'][3])))
 
-    def print_blkptr(self, bp):
+    def pretty_print(self, bp):
         if bp == 0:
             print("<NULL>")
             return
@@ -144,12 +147,5 @@ SYNOPSIS
         else:
             Blkptr.print_blkptr_normal(bp, type)
 
-    def call(self, input):
-        if self.islast:
-            for bp in input:
-                self.print_blkptr(bp)
-        else:
-            yield from input
-
-Blkptr()
+registerSDBCommand(Blkptr)
 

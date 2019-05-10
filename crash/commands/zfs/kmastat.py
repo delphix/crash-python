@@ -6,7 +6,8 @@ import argparse
 from typing import Callable, Any
 from crash.commands.zfs.list import LinuxList
 from crash.commands.zfs.zfs_util import offsetof,symbol_address
-from crash.commands.zfs.Pipe import PipeableCommand, LineCount
+from crash.commands.sdb import SDBCommand
+from crash.commands.pipe_utils import LineCount
 from crash.commands.zfs.cast import Cast
 
 class Kmastat(gdb.Command):
@@ -21,7 +22,7 @@ class Kmastat(gdb.Command):
     def print_cache(self, cache, args):
         if int(cache['skc_linux_cache']) != 0:
             return
-        num_complete_slabs = int(next(PipeableCommand.executePipeline([cache['skc_complete_list'].address],
+        num_complete_slabs = int(next(SDBCommand.executePipeline([cache['skc_complete_list'].address],
                                                              [LinuxList(str(offsetof('spl_kmem_slab_t', 'sks_list'))),
                                                               LineCount()])))
         entries = 0
@@ -57,7 +58,7 @@ class Kmastat(gdb.Command):
         print('cache                        buf    buf    buf     memory')
         print('name                        size in use  total     in use')
         print('------------------------- ------ ------ ------ ----------')
-        for cache in PipeableCommand.executePipeline([symbol_address('spl_kmem_cache_list')],
+        for cache in SDBCommand.executePipeline([symbol_address('spl_kmem_cache_list')],
                                                      [LinuxList(str(offsetof('spl_kmem_cache_t', 'skc_list'))),
                                                       Cast('spl_kmem_cache_t *')]):
             self.print_cache(cache, args)

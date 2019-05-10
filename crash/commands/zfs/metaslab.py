@@ -3,15 +3,20 @@
 
 import gdb
 import argparse
-from crash.commands.zfs.Pipe import Locator, PipeableCommand
-from typing import Callable, Any
+from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.locator import Locator
+from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.zfs_util import print_histogram
 
-class Metaslab(Locator):
+class Metaslab(Locator, PrettyPrinter):
+    cmdName = 'metaslab'
+    inputType = 'metaslab_t *'
+    outputType = 'metaslab_t *'
+
     def __init__(self, args = ""):
-        super().__init__("metaslab", outputType="metaslab_t*",
-                inputTypes={ "vdev_t*": self.metaslab_from_vdev,
-                    "metaslab_t*": self.metaslab_from_metaslab})
+        super().__init__()
+        self.inputTypes = {'vdev_t *': self.metaslab_from_vdev,
+                           'metaslab_t *': self.metaslab_from_metaslab}
         try:
             parser = argparse.ArgumentParser(prog='metaslab')
             parser.add_argument('-H', '--histogram',action='store_true',
@@ -49,7 +54,7 @@ class Metaslab(Locator):
 # XXX - removed because of circular dependencies when importing Vdev class
 #
 #    def metaslab_from_spa(self, spa):
-#        vdevs = PipeableCommand.executePipeline([spa], [Vdev()])
+#        vdevs = SDBCommand.executePipeline([spa], [Vdev()])
 #        for vd in vdevs:
 #            yield from self.metaslab_from_vdev(vd)
 
@@ -58,4 +63,4 @@ class Metaslab(Locator):
             msp = vdev['vdev_ms'][m]
             yield msp
 
-Metaslab()
+registerSDBCommand(Metaslab)

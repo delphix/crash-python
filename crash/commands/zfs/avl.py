@@ -3,14 +3,16 @@
 
 import gdb
 import argparse
-from typing import Callable, Any
-from crash.commands.zfs.Pipe import AbstractContainer
+from crash.commands.walk import Walker
+from crash.commands.sdb import registerSDBCommand
 
-class Avl(AbstractContainer):
+class Avl(Walker):
     """ walk avl tree """
 
+    cmdName = 'avl'
+    inputType = 'avl_tree_t *'
     def __init__(self, arg=""):
-        super().__init__('avl', inputType='avl_tree_t*')
+        super().__init__()
 
     def walk(self, tree):
         offset = int(tree['avl_offset'])
@@ -28,4 +30,4 @@ class Avl(AbstractContainer):
         rchild = node.dereference()['avl_child'][1]
         yield from Avl.helper(rchild, offset)
 
-Avl()
+registerSDBCommand(Avl)

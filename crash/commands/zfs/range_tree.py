@@ -3,34 +3,35 @@
 
 import gdb
 import argparse
-from crash.commands.zfs.Pipe import PipeableCommand
-from crash.commands.zfs.Pipe import Locator
-from crash.commands.zfs.Pipe import PrettyPrint
+from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.locator import Locator
+from crash.commands.pretty_printer import PrettyPrinter, PrettyPrint
 from crash.commands.zfs.avl import Avl
 from crash.commands.zfs.cast import Cast
 
-class RangeTree(Locator):
+class RangeTree(PrettyPrinter):
+    cmdName = 'range_tree'
+    inputType = 'range_tree_t *'
     def __init__(self, arg=""):
-        super().__init__('range_tree', outputType="range_tree_t*")
+        super().__init__()
 
-    def pretty_print_one(self, rt):
+    def pretty_print(self, rt):
         print("{}: range tree of {} entries, {} bytes".format(
             rt,
             rt['rt_root']['avl_numnodes'],
             rt['rt_space']))
-        for node in PipeableCommand.executePipeline([rt], [RangeSeg(), PrettyPrint()]):
-            pass
+        SDBCommand.executePipelineTerm([rt], [RangeSeg(), PrettyPrint()])
 
-    def pretty_print(self, rts):
-        for rt in rts:
-            self.pretty_print_one(rt)
-RangeTree()
+registerSDBCommand(RangeTree)
 
-class RangeSeg(Locator):
+class RangeSeg(Locator, PrettyPrinter):
+    cmdName = 'range_seg'
+    inputType = 'range_seg_t *'
+    outputType = 'range_seg_t *'
+
     def __init__(self, args=""):
-        super().__init__("range_seg",
-                outputType="range_seg_t*",
-                inputTypes={"range_tree_t*": self.range_seg_from_range_tree})
+        super().__init__()
+        self.inputTypes = {'range_tree_t *': self.range_seg_from_range_tree}
 
     # arg is iterable of gdb.Value of type range_seg_t*
     def pretty_print(self, segs):
@@ -43,7 +44,8 @@ class RangeSeg(Locator):
     # arg is gdb.Value of type range_tree_t*
     # need to yield gdb.Value's of type range_seg_t*
     def range_seg_from_range_tree(self, rt):
-        yield from PipeableCommand.executePipeline([rt['rt_root'].address],
+        yield from SDBCommand.executePipeline([rt['rt_root'].address],
             [Avl(), Cast('range_seg_t *')])
-RangeSeg()
+
+registerSDBCommand(RangeSeg)
 
