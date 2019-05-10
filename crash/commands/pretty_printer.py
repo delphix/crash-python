@@ -3,19 +3,21 @@
 
 from crash.commands.sdb import SDBCommand,registerSDBCommand
 from crash.commands.zfs.zfs_util import parse_type
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Type
 import gdb
 
 #
 # Commands that are designed to format a specific type of data.
 #
 class PrettyPrinter(SDBCommand):
-    allPrinters : Dict[str, type] = {}
+    allPrinters : Dict[str, Type["PrettyPrinter"]] = {}
     def __init__(self):
         super().__init__()
 
-    def registerCmd(c : type) -> None:
+    @staticmethod
+    def registerCmd(c : Type[SDBCommand]) -> None:
         assert c.inputType is not None
+        assert issubclass(c, PrettyPrinter), '{} not instance of PrettyPrinter'.format(c)
         PrettyPrinter.allPrinters[c.inputType] = c
         
     def pretty_print(self, input : gdb.Value) -> None:

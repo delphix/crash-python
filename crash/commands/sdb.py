@@ -6,24 +6,10 @@ import subprocess
 import sys
 import shlex
 import traceback
-from typing import Iterable,List
+from typing import Iterable,List,Type,Union,Optional
 from crash.commands.zfs.zfs_util import parse_type
 
-#
-# Some "abstract" subclasses of SDBCommand have their own registration logic
-# (Walkers, PrettyPrinter), so we walk through the mro for the class and call
-# register for each one. Any class that gets subclassed that doesn't have
-# registration logic should define a registerCmd function that does nothing.
-#
 allSDBCommands = {}
-def registerSDBCommand(c : type) -> None:
-    for c2 in c.__mro__:
-        # We skip registering c with c, because if it needs to register itself
-        # it can do so, and this avoids double-calling other registration
-        # functions in leaf classes that don't override registerCmd to be a
-        # no-op.
-        if hasattr(c2, "registerCmd") and c2 != c:
-            c2.registerCmd(c)
 
 #
 # This class is the superclass of all commands intended for use with SDB. The
@@ -31,10 +17,12 @@ def registerSDBCommand(c : type) -> None:
 # `call` method.
 #
 class SDBCommand(object):
-    inputType = None
-    def __init__(self):
+    inputType : Optional[str] =None
+    cmdName : Union[List[str],str] = ''
+    def __init__(self, args=""):
         self.islast = False
 
+    @staticmethod
     def registerByName(name : str, c : type) -> None:
         allSDBCommands[name] = c
 
@@ -54,8 +42,9 @@ class SDBCommand(object):
                 c().invoke(argstr, from_tty)
 
         gdbCmd()
-        
-    def registerCmd(c : type) -> None:
+
+    @staticmethod
+    def registerCmd(c : Type["SDBCommand"]) -> None:
         if not issubclass(c, SDBCommand):
             raise TypeError("{} is not a subclass of {}".format(c, SDBCommand))
         if not hasattr(c, "cmdName"):
@@ -80,10 +69,11 @@ class SDBCommand(object):
         # Parse the argument string. Each pipeline stage is delimited by
         # a pipe character "|". If there is a "!" character detected, then
         # pipe all the remaining output into a subshell.
-        all_tokens = shlex.shlex(argstr, posix=False, punctuation_chars="|!")
-        all_tokens.wordchars += '();<>&[]'
+        lexer = shlex.shlex(argstr, posix=False, punctuation_chars="|!")
+        lexer.wordchars += '();<>&[]'
+        all_tokens = list(lexer)
         pipe_stages = []
-        tokens = []
+        tokens : List[str] = []
         for n, token in enumerate(all_tokens):
             if token == '|':
                 pipe_stages.append(' '.join(tokens))
@@ -123,7 +113,7 @@ class SDBCommand(object):
         if shell_cmd is not None:
             shell_proc = subprocess.Popen(shell_cmd, shell=True, stdin=subprocess.PIPE, encoding='utf-8')
             old_stdout = sys.stdout
-            sys.stdout = shell_proc.stdin
+            sys.stdout = shell_proc.stdin # type: ignore
 
         try:
             # If the last step in the pipeline isn't a PipeableCommand, it's
@@ -154,7 +144,8 @@ class SDBCommand(object):
     # Run the pipeline, and yield the output. This function recurses through
     # the pipeline, providing each stage with the earlier stage's outputs as
     # input.
-    def executePipeline(first_input : Iterable[gdb.Value], args : List[object]) -> gdb.Value:
+    @staticmethod
+    def executePipeline(first_input : Iterable[gdb.Value], args : List["SDBCommand"]) -> gdb.Value:
         # if this stage wants its input in a certain type, insert a
         # "coerce" stage before it
         if args[-1].inputType is not None:
@@ -167,7 +158,8 @@ class SDBCommand(object):
 
     # Run a pipeline that ends in a non-pipeable command. This function is
     # very similar to executePipeline, but it doesn't yield any results.
-    def executePipelineTerm(first_input : Iterable[gdb.Value], args : List[object]) -> gdb.Value:
+    @staticmethod
+    def executePipelineTerm(first_input : Iterable[gdb.Value], args : List["SDBCommand"]) -> gdb.Value:
         # if the last stage wants its input in a certain type, insert a
         # "coerce" stage before it
         assert not isinstance(args[-1], PipeableCommand)
@@ -180,12 +172,26 @@ class SDBCommand(object):
         args[-1].call(this_input)
 
     # subclass must override this, typically with a generator, i.e. it must use `yield`
-    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
+    def call(self, input : Iterable[gdb.Value]):
         raise NotImplementedError
 
     # called if this is the last thing in the pipeline
     def setIsLast(self):
         self.islast = True
+#
+# Some "abstract" subclasses of SDBCommand have their own registration logic
+# (Walkers, PrettyPrinter), so we walk through the mro for the class and call
+# register for each one. Any class that gets subclassed that doesn't have
+# registration logic should define a registerCmd function that does nothing.
+#
+def registerSDBCommand(c : Type[SDBCommand]) -> None:
+    for c2 in c.__mro__:
+        # We skip registering c with c, because if it needs to register itself
+        # it can do so, and this avoids double-calling other registration
+        # functions in leaf classes that don't override registerCmd to be a
+        # no-op.
+        if hasattr(c2, "registerCmd") and c2 != c:
+            c2.registerCmd(c) # type: ignore
 
 #
 # Commands whose call function yields an iterable of some kind; usually a
@@ -197,7 +203,8 @@ class PipeableCommand(SDBCommand):
         rv = self.call([])
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
 
-    def registerCmd(c : type) -> None:
+    @staticmethod
+    def registerCmd(c : Type[SDBCommand]) -> None:
         pass
 
 #
@@ -234,7 +241,7 @@ class Coerce(PipeableCommand):
 
         raise TypeError("can not coerce {} to {} {}".format(obj.type, self.type, self.auxError))
 
-    def call(self, input):
+    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
         for i in input:
             yield self.coerce(i)
 

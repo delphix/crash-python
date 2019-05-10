@@ -4,7 +4,7 @@
 from crash.commands.sdb import registerSDBCommand,allSDBCommands
 from crash.commands.sdb import PipeableCommand
 import gdb
-from typing import Iterable
+from typing import Iterable,Deque
 import argparse
 
 class Pipe(gdb.Command):
@@ -70,7 +70,7 @@ class Tail(PipeableCommand):
             pass
 
     def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
-        q = deque(maxlen=self.args.count)
+        q : Deque[gdb.Value] = deque(maxlen=self.args.count)
         for o in input:
             q.append(o)
         for o in q:

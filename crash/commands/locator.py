@@ -3,8 +3,8 @@
 
 import gdb
 from crash.commands.pretty_printer import PrettyPrinter
-from crash.commands.sdb import PipeableCommand
-from typing import Iterable, Dict, Callable
+from crash.commands.sdb import PipeableCommand, SDBCommand
+from typing import Iterable, Dict, Callable, Type
 from crash.commands.zfs.zfs_util import parse_type
 from crash.commands.walk import Walk
 
@@ -17,8 +17,10 @@ from crash.commands.walk import Walk
 # workflow.
 #
 class Locator(PipeableCommand):
-    allLocators : Dict[str, type] = {}
-
+    allLocators : Dict[str, Type['Locator']] = {}
+    outputType = ''
+    inputTypes : Dict[str, Callable[[Iterable[gdb.Value]], gdb.Value]] =  {}
+    
     def __init__(self):
         super().__init__()
         # We unset the inputType here so that the pipeline doesn't add a
@@ -30,7 +32,10 @@ class Locator(PipeableCommand):
         # work, and the pipeline logic doesn't see an inputType to coerce to.
         self.inputType = None
 
-    def registerCmd(c):
+    @staticmethod
+    def registerCmd(c : Type[SDBCommand]) -> None:
+        assert issubclass(c, Locator), '{} not instance of Locator'.format(c)
+        assert c.outputType != ''
         Locator.allLocators[c.outputType] = c
 
     # subclass may override this

@@ -2,21 +2,23 @@
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
 import gdb
-from crash.commands.sdb import registerSDBCommand
-from crash.commands.sdb import PipeableCommand
+from crash.commands.sdb import registerSDBCommand, SDBCommand, PipeableCommand
 from crash.commands.zfs.zfs_util import parse_type
-from typing import Iterable, Dict
+from typing import Iterable, Dict, Type
 
 #
 # Commands that are designed to iterate over data structures that can contain
 # arbitrary data types.
 #
 class Walker(PipeableCommand):
-    allWalkers : Dict[str, type] = {}
+    allWalkers : Dict[str, Type["Walker"]] = {}
     def __init__(self):
         super().__init__()
 
-    def registerCmd(c : type) -> None:
+    @staticmethod
+    def registerCmd(c : Type[SDBCommand]) -> None:
+        assert issubclass(c, Walker), '{} not instance of Walker'.format(c)
+        assert c.inputType is not None
         Walker.allWalkers[c.inputType] = c
 
     def walk(self, input : Iterable[gdb.Value]) -> gdb.Value:

@@ -9,6 +9,7 @@ import os
 import glob
 import importlib
 import argparse
+from typing import Dict, Type
 
 class CrashCommandLineError(RuntimeError):
     pass
@@ -18,7 +19,7 @@ class CrashCommandParser(argparse.ArgumentParser):
         raise CrashCommandLineError(message)
 
 class CrashCommand(CrashBaseClass, gdb.Command):
-    commands = {}
+    commands : Dict[str, Type["CrashCommand"]] = {}
     def __init__(self, name, parser=None):
         self.name = "py" + name
         if parser is None:
