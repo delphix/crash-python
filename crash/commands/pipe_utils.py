@@ -106,8 +106,6 @@ def parseMember(value, memberString, strictChecking=False):
         else:
             assert False, 'Unknown operator "{}"'.format(operator)
 
-#    if value.type.strip_typedefs().code == gdb.TYPE_CODE_STRUCT:
-#        value = value.address
     return value
 
 class Member(PipeableCommand):

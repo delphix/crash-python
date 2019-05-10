@@ -21,7 +21,9 @@ class Walker(PipeableCommand):
 
     def walk(self, input : Iterable[gdb.Value]) -> gdb.Value:
         raise NotImplementedError
-        
+
+    # Iterate over the inputs and call the walk command on each of them,
+    # verifying the types as we go.
     def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
         t = parse_type(self.inputType).strip_typedefs().unqualified()
         for i in input:
@@ -34,6 +36,8 @@ class Walker(PipeableCommand):
 
             yield from self.walk(i)
 
+# A convenience command that will automatically dispatch to the appropriate
+# walker based on the type of the input data.
 class Walk(PipeableCommand):
     cmdName = 'walk'
     def __init__(self, arg=""):
@@ -61,12 +65,13 @@ class Walk(PipeableCommand):
             raise TypeError('no walker found for input of type {} (base type {})'.format(
                 i.type,
                 i_type))
-        if not hasInput:
+        # If we got no input and we're the last thing in the pipeline, we're
+        # probably the first thing in the pipeline. Print out the available
+        # walkers.
+        if not hasInput and self.islast:
             print("The following types have walkers:")
             print("\t%-20s %-20s" % ("WALKER", "TYPE"))
             for t, c in baked:
                 print("\t%-20s %-20s" % (c().cmdName, t))
-            raise TypeError('no input given to walk')
-
 
 registerSDBCommand(Walk)

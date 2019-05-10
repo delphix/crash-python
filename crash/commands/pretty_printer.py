@@ -20,7 +20,8 @@ class PrettyPrinter(SDBCommand):
         
     def pretty_print(self, input : gdb.Value) -> None:
         raise NotImplementedError
-        
+
+    # Invoke the pretty_print function on each input, checking types as we go.
     def call(self, input : Iterable[gdb.Value]) -> None:
         t = parse_type(self.inputType).strip_typedefs().unqualified()
         for i in input:
@@ -48,8 +49,6 @@ class PrettyPrint(SDBCommand):
             try:
                 for t, c in baked:
                     if i_type == t and hasattr(c, "pretty_print"):
-#                        if not self.islast:
-#                            yield i
                         c().pretty_print([i])
                         raise StopIteration
             except StopIteration:
@@ -60,5 +59,14 @@ class PrettyPrint(SDBCommand):
                 self.cmdName,
                 i.type,
                 i_type))
+        # If we got no input and we're the last thing in the pipeline, we're
+        # probably the first thing in the pipeline. Print out the available
+        # pretty-printers.
+        if not hasInput and self.islast:
+            print("The following types have pretty-printers:")
+            print("\t%-20s %-20s" % ("PRINTER", "TYPE"))
+            for t, c in baked:
+                if hasattr(c, "pretty_print"):
+                    print("\t%-20s %-20s" % (c().cmdName, t))
 
 registerSDBCommand(PrettyPrint)

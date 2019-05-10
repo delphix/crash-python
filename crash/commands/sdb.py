@@ -9,9 +9,19 @@ import traceback
 from typing import Iterable,List
 from crash.commands.zfs.zfs_util import parse_type
 
+#
+# Some "abstract" subclasses of SDBCommand have their own registration logic
+# (Walkers, PrettyPrinter), so we walk through the mro for the class and call
+# register for each one. Any class that gets subclassed that doesn't have
+# registration logic should define a registerCmd function that does nothing.
+#
 allSDBCommands = {}
 def registerSDBCommand(c : type) -> None:
     for c2 in c.__mro__:
+        # We skip registering c with c, because if it needs to register itself
+        # it can do so, and this avoids double-calling other registration
+        # functions in leaf classes that don't override registerCmd to be a
+        # no-op.
         if hasattr(c2, "registerCmd") and c2 != c:
             c2.registerCmd(c)
 
@@ -31,7 +41,13 @@ class SDBCommand(object):
         if not hasattr(c, "cmdName"):
             raise TypeError("{} does not define cmdName".format(c))
         allSDBCommands[c.cmdName] = c
-        
+
+        #
+        # We create an inner class that dispatches the gdb invoke call to the
+        # actual command's invoke method. This enables the current
+        # registration mechanism, instead of the default gdb.Command mechanism
+        # where the constructor is also the register function.
+        #
         class gdbCmd(gdb.Command):
             def __init__(self):
                 gdbCmdname = c.cmdName
@@ -43,6 +59,10 @@ class SDBCommand(object):
 
         gdbCmd()
 
+    #
+    # This function gets called from the gdbCmd inner class above, and
+    # contains the core pipeline logic.
+    #
     def invoke(self, argstr : str, from_tty : bool) -> None:
         shell_cmd = None
         # Parse the argument string. Each pipeline stage is delimited by
@@ -69,6 +89,10 @@ class SDBCommand(object):
             # the last pipe
             pipe_stages.append(' '.join(tokens))
 
+        # If the last argument to the first pipeline stage is an integer, we
+        # treat that as the input to the pipeline as a convenience feature.
+        #
+        # TODO: This results in a bug with commands like dbuf --level=0 -b 3.
         input = []
         try:
             first_arg = pipe_stages[0]
@@ -79,6 +103,8 @@ class SDBCommand(object):
         except:
             pass
 
+        # Build the pipeline by constructing each of the commands we want to
+        # use and building a list of them.
         pipeline = []
         pipeline.append(type(self)(pipe_stages[0]))
         for stage in pipe_stages[1:]:
@@ -91,12 +117,20 @@ class SDBCommand(object):
 
         pipeline[-1].setIsLast()
 
+        # If we have a !, redirect stdout to a shell process. This avoids
+        # having to have a custom printing function that we pass around and
+        # use everywhere. We'll fix stdout to point back to the normal stdout
+        # at the end.
         if shell_cmd is not None:
             shell_proc = subprocess.Popen(shell_cmd, shell=True, stdin=subprocess.PIPE, encoding='utf-8')
             old_stdout = sys.stdout
             sys.stdout = shell_proc.stdin
 
         try:
+            # If the last step in the pipeline isn't a PipeableCommand, it's
+            # not going to yield anything. We call executePipelineTerm in that
+            # case so that we don't run into an issue where the pipeline
+            # doesn't pull properly because of generator quirks.
             if not isinstance(pipeline[-1], PipeableCommand):
                 SDBCommand.executePipelineTerm(input, pipeline)
             else:
@@ -118,7 +152,9 @@ class SDBCommand(object):
                 sys.stdout = old_stdout
                 shell_proc.wait()
 
-
+    # Run the pipeline, and yield the output. This function recurses through
+    # the pipeline, providing each stage with the earlier stage's outputs as
+    # input.
     def executePipeline(first_input : Iterable[gdb.Value], args : List[object]) -> gdb.Value:
         # if this stage wants its input in a certain type, insert a
         # "coerce" stage before it
@@ -130,6 +166,8 @@ class SDBCommand(object):
             this_input = SDBCommand.executePipeline(first_input, args[:-1])
         yield from args[-1].call(this_input)
 
+    # Run a pipeline that ends in a non-pipeable command. This function is
+    # very similar to executePipeline, but it doesn't yield any results.
     def executePipelineTerm(first_input : Iterable[gdb.Value], args : List[object]) -> gdb.Value:
         # if the last stage wants its input in a certain type, insert a
         # "coerce" stage before it
@@ -163,6 +201,12 @@ class PipeableCommand(SDBCommand):
     def registerCmd(c : type) -> None:
         pass
 
+#
+# A pipe command that massages its input types into the a different type. This
+# usually involves stripping typedefs or qualifiers, adding pointers to go
+# from a struct to a struct *, or casting an int or void * to the appropriate
+# pointer type.
+#
 class Coerce(PipeableCommand):
     cmdName = 'coerce'
     def __init__(self, arg : str = "void *", auxError : str = ''):

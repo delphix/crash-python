@@ -15,6 +15,13 @@ class Metaslab(Locator, PrettyPrinter):
 
     def __init__(self, args = ""):
         super().__init__()
+
+        # Input Types are defined in the constructor because they aren't
+        # actually registered in the locator logic, and python won't let you
+        # do self.foo when creating it outside the construtor. We could
+        # instead use Metaslab.foo, but only after foo has been defined, which
+        # would mean putting the definition at the bottom of the function,
+        # which would be odd.
         self.inputTypes = {'vdev_t *': self.metaslab_from_vdev,
                            'metaslab_t *': self.metaslab_from_metaslab}
         try:

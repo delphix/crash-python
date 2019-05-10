@@ -17,6 +17,13 @@ class Vdev(Locator, PrettyPrinter):
 
     def __init__(self, args = ""):
         super().__init__()
+
+        # Input Types are defined in the constructor because they aren't
+        # actually registered in the locator logic, and python won't let you
+        # do self.foo when creating it outside the construtor. We could
+        # instead use Vdev.foo, but only after foo has been defined, which
+        # would mean putting the definition at the bottom of the function,
+        # which would be odd.
         self.inputTypes = {'spa_t *': self.vdevs_from_spa,
                            'vdev_t *': self.vdevs_from_vdev}
         # XXX add flag for "direct children (from vdev) only"?

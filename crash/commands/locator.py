@@ -21,6 +21,13 @@ class Locator(PipeableCommand):
 
     def __init__(self):
         super().__init__()
+        # We unset the inputType here so that the pipeline doesn't add a
+        # coerce before us and ruin our ability to dispatch based on multiple
+        # input types. For pure locators, an inputType wouldn't be set, but
+        # hybrid Locators and PrettyPrinters will set an inputType so that
+        # PrettyPrint can dispatch to them. By unsetting the inputType in the
+        # instance, after registration is complete, PrettyPrint continues to
+        # work, and the pipeline logic doesn't see an inputType to coerce to.
         self.inputType = None
 
     def registerCmd(c):
@@ -31,6 +38,8 @@ class Locator(PipeableCommand):
         raise TypeError('command "{}" requires an input'.format(
             self.cmdName))
 
+    # Dispatch to the appropriate instance function based on the type of the
+    # input we receive.
     def caller(self, input : Iterable[gdb.Value]) -> gdb.Value:
         baked = [ (parse_type(k).strip_typedefs().unqualified(), f) for k, f in self.inputTypes.items() ]
         out_type = parse_type(self.outputType)
