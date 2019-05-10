@@ -41,17 +41,16 @@ class Locator(PipeableCommand):
     # Dispatch to the appropriate instance function based on the type of the
     # input we receive.
     def caller(self, input : Iterable[gdb.Value]) -> gdb.Value:
-        baked = [ (parse_type(k).strip_typedefs().unqualified(), f) for k, f in self.inputTypes.items() ]
+        baked = [ (parse_type(k), f) for k, f in self.inputTypes.items() ]
         out_type = parse_type(self.outputType)
         hasInput = False
         for i in input:
-            i_type = i.type.strip_typedefs().unqualified()
             hasInput = True
 
             # try subclass-specified input types first, so that they can override any other behavior
             try:
                 for t, f in baked:
-                    if i_type == t:
+                    if i.type == t:
                         yield from f(i)
                         raise StopIteration
             except StopIteration:
@@ -59,7 +58,7 @@ class Locator(PipeableCommand):
 
             # try passthrough of output type
             # note, this may also be handled by subclass-specified input types
-            if i_type == out_type:
+            if i.type == out_type:
                 yield i
                 continue
 
@@ -73,10 +72,9 @@ class Locator(PipeableCommand):
                 pass
 
             # error
-            raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
+            raise TypeError('command "{}" does not handle input of type {}'.format(
                 self.cmdName,
-                i.type,
-                i_type))
+                i.type))
         if not hasInput:
             yield from self.noInput()
 

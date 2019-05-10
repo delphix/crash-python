@@ -23,14 +23,12 @@ class PrettyPrinter(SDBCommand):
 
     # Invoke the pretty_print function on each input, checking types as we go.
     def call(self, input : Iterable[gdb.Value]) -> None:
-        t = parse_type(self.inputType).strip_typedefs().unqualified()
+        t = parse_type(self.inputType)
         for i in input:
-            i_type = i.type.strip_typedefs().unqualified()
-            if i_type != t:
-                raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
+            if i.type != t:
+                raise TypeError('command "{}" does not handle input of type {}'.format(
                     self.cmdName,
-                    i.type,
-                    i_type))
+                    i.type))
 
             self.pretty_print(i)
 
@@ -40,25 +38,23 @@ class PrettyPrint(SDBCommand):
         super().__init__()
 
     def call(self, input : Iterable[gdb.Value]):
-        baked = [ (parse_type(t).strip_typedefs().unqualified(), c) for t, c in PrettyPrinter.allPrinters.items() ]
+        baked = [ (parse_type(t), c) for t, c in PrettyPrinter.allPrinters.items() ]
         hasInput = False
         for i in input:
             hasInput = True
-            i_type = i.type.strip_typedefs().unqualified()
 
             try:
                 for t, c in baked:
-                    if i_type == t and hasattr(c, "pretty_print"):
+                    if i.type == t and hasattr(c, "pretty_print"):
                         c().pretty_print([i])
                         raise StopIteration
             except StopIteration:
                 continue
 
             # error
-            raise TypeError('command "{}" does not handle input of type {} (base type {})'.format(
+            raise TypeError('command "{}" does not handle input of type {}'.format(
                 self.cmdName,
-                i.type,
-                i_type))
+                i.type))
         # If we got no input and we're the last thing in the pipeline, we're
         # probably the first thing in the pipeline. Print out the available
         # pretty-printers.

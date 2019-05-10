@@ -212,30 +212,28 @@ class Coerce(PipeableCommand):
     def __init__(self, arg : str = "void *", auxError : str = ''):
         super().__init__()
         self.auxError = auxError
-        self.type = parse_type(arg).strip_typedefs().unqualified()
+        self.type = parse_type(arg)
         if self.type.code is not gdb.TYPE_CODE_PTR:
-            raise TypeError('can only coerce to pointer types, not {} ({})'.format(arg, self.type))
+            raise TypeError('can only coerce to pointer types, not {}'.format(self.type))
 
     def coerce(self, obj : gdb.Value) -> gdb.Value:
-        tt = obj.type.strip_typedefs().unqualified()
-
         # same type is fine
-        if tt == self.type:
+        if obj.type == self.type:
             return obj
 
         # "void *" can be coerced to any pointer type
-        if tt.code is gdb.TYPE_CODE_PTR and tt.target().code is gdb.TYPE_CODE_VOID:
+        if obj.type.code is gdb.TYPE_CODE_PTR and obj.type.target().code is gdb.TYPE_CODE_VOID:
             return obj.cast(self.type)
 
         # integers can be coerced to any pointer typo
-        if tt.code is gdb.TYPE_CODE_INT:
+        if obj.type.code is gdb.TYPE_CODE_INT:
             return obj.cast(self.type)
 
         # "type" can be coerced to "type *"
-        if obj.address is not None and obj.address.type.strip_typedefs().unqualified() == self.type:
+        if obj.address is not None and obj.address.type == self.type:
             return obj.address.cast(self.type)
 
-        raise TypeError("can not coerce {} to {} {}".format(tt, self.type, self.auxError))
+        raise TypeError("can not coerce {} to {} {}".format(obj.type, self.type, self.auxError))
 
     def call(self, input):
         for i in input:
