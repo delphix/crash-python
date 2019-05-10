@@ -28,6 +28,7 @@ class Spa(Locator, PrettyPrinter):
                     help='metaslab flag' )
             parser.add_argument('-H', '--histogram',action='store_true',
                     help='histogram flag' )
+            parser.add_argument('poolnames', nargs='*')
             self.args = parser.parse_args(gdb.string_to_argv(args))
             self.arg_string = ""
             if self.args.metaslab:
@@ -53,6 +54,8 @@ class Spa(Locator, PrettyPrinter):
                 [symbol_address("spa_namespace_avl")],
                 [Avl(), Cast('spa_t *')])
         for spa in input:
+            if self.args.poolnames and spa['spa_name'].string() not in self.args.poolnames:
+                continue
             yield spa
 
 registerSDBCommand(Spa)
