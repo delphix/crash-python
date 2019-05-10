@@ -80,7 +80,8 @@ class SDBCommand(object):
         # Parse the argument string. Each pipeline stage is delimited by
         # a pipe character "|". If there is a "!" character detected, then
         # pipe all the remaining output into a subshell.
-        all_tokens = shlex.split(argstr, posix=False)
+        all_tokens = shlex.shlex(argstr, posix=False, punctuation_chars="|!")
+        all_tokens.wordchars += '();<>&[]'
         pipe_stages = []
         tokens = []
         for n, token in enumerate(all_tokens):
