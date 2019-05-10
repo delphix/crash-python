@@ -25,9 +25,7 @@ class DBufStats(gdb.Command):
         return count
 
 
-    def print_stats(hash_map):
-        dbuf_hash_type = gdb.lookup_type('struct dbuf_hash_table').pointer()
-        dbuf_hash = hash_map.cast(dbuf_hash_type)
+    def print_stats(dbuf_hash):
         table_mask = dbuf_hash['hash_table_mask']
         dbuf_count = gdb.lookup_symbol("dbuf_hash_count")[0].value()
         print ("hash table has " + str(table_mask) + " buckets, " +

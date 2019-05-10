@@ -9,7 +9,7 @@ class Dbufs(gdb.Command):
     """ list dbufs """
 
     def __init__(self):
-        super(Dbufs, self).__init__('dbuf_list', gdb.COMMAND_DATA)
+        super().__init__('dbuf_list', gdb.COMMAND_DATA)
 
 
     def print_dbuf_chain(dbuf):

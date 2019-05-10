@@ -48,7 +48,7 @@ class ZfsDbgmsg(gdb.Command):
             verbosity += 1
 
         zda = ZfsDbgmsgArg(verbosity >= 1, verbosity >= 2)
-        proc_list = symbol_address("zfs_dbgmsgs", "procfs_list_t")
+        proc_list = symbol_address("zfs_dbgmsgs")
         list_addr = proc_list['pl_list'].address
         for node in PipeableCommand.executePipeline([list_addr], [List(), Cast('zfs_dbgmsg_t *')]):
             ZfsDbgmsg.print_msg(node, zda)

@@ -4,9 +4,6 @@
 import gdb
 import argparse
 
-from collections import defaultdict
-from crash.commands.zfs.zfs_util import symbol_address
-
 class DBuf(gdb.Command):
     """ dbuf fields"""
 

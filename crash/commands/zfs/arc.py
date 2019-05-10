@@ -22,6 +22,6 @@ class Arc(gdb.Command):
 
     def invoke(self, arg, from_tty):
         print("----------------------------------------")
-        self.print_arc(symbol_address("arc_stats", 'arc_stats_t'))
+        self.print_arc(symbol_address("arc_stats"))
 
 Arc()

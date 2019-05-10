@@ -7,13 +7,12 @@ import os.path
 from typing import Callable, Any
 from os.path import commonprefix
 
-def symbol_address(symbol, typename="void"):
-    type = gdb.lookup_type(typename).pointer()
+def symbol_address(symbol):
     sym = gdb.lookup_global_symbol(symbol)
     if sym == None:
         sym = gdb.lookup_symbol(symbol)[0]
     if sym != None:
-        return sym.value().address.cast(type)
+        return sym.value().address
     return None
 
 def sizeof(name : str) -> int:

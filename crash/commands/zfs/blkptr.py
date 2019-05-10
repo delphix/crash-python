@@ -6,7 +6,6 @@
 
 import gdb
 from crash.commands.zfs.Pipe import PipeableCommand
-from crash.commands.zfs.zfs_util import symbol_address
 from crash.commands.zfs.zfs_util import enum_lookup
 
 SPA_MINBLOCKSHIFT = 9
