@@ -5,6 +5,7 @@ from crash.commands.sdb import registerSDBCommand,allSDBCommands
 from crash.commands.sdb import PipeableCommand
 import gdb
 from typing import Iterable
+import argparse
 
 class Pipe(gdb.Command):
     def __init__(self):

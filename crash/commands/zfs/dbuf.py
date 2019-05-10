@@ -6,11 +6,13 @@ import argparse
 from crash.commands.zfs.zfs_util import symbol_address
 from crash.commands.sdb import registerSDBCommand, SDBCommand
 from crash.commands.locator import Locator
+from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.walk import Walk
 from crash.commands.zfs.cast import Cast
 
-class Dbuf(Locator):
+class Dbuf(Locator, PrettyPrinter):
     cmdName = 'dbuf'
+    inputType = 'dmu_buf_impl_t *'
     outputType = 'dmu_buf_impl_t *'
 
     def __init__(self, arg=""):
