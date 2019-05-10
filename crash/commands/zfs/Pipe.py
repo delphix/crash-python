@@ -9,6 +9,7 @@ from crash.commands.zfs.zfs_util import parse_type
 import subprocess
 import io
 import sys
+import shlex
 
 
 def print_to_string(*args, **kwargs):
@@ -37,15 +38,31 @@ class PipeableCommand(gdb.Command):
 
     def invoke(self, argstr, from_tty):
         shell_cmd = None
-        shell_split = argstr.split('!')
-        argstr = shell_split[0]
-        if len(shell_split) > 2:
-            print("Multiple ! not supported")
-            return
-        elif len(shell_split) == 2:
-            shell_cmd = shell_split[1].strip()
 
-        pipe_stages = argstr.split('|')
+        # Parse the argument string. Each pipeline stage is delimited by
+        # a pipe character "|". If there is a "!" character detected, then
+        # pipe all the remaining output into a subshell.
+        all_tokens = shlex.split(argstr, posix=False)
+        pipe_stages = []
+        tokens = []
+        for n, token in enumerate(all_tokens):
+            if token == '|':
+                pipe_stages.append(' '.join(tokens))
+                tokens = []
+            elif token == '!':
+                pipe_stages.append(' '.join(tokens))
+                if any(t == '!' for t in all_tokens[n + 1:]):
+                    print("Multiple ! not supported")
+                    return
+                shell_cmd = ' '.join(all_tokens[n + 1:])
+                break
+            else:
+                tokens.append(token)
+        else:
+            # We didn't find a !, so all remaining tokens are part of
+            # the last pipe
+            pipe_stages.append(' '.join(tokens))
+
         input = []
         try:
             first_arg = pipe_stages[0]
