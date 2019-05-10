@@ -17,7 +17,7 @@ class Cast(PipeableCommand):
 
         try:
             parser = argparse.ArgumentParser(prog='cast')
-            parser.add_argument('cast_type', default=['void', '*'], nargs='*')
+            parser.add_argument('cast_type', default=['void', '*'], nargs='+')
             self.args = parser.parse_args(gdb.string_to_argv(arg))
         except:
             pass

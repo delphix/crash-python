@@ -35,12 +35,8 @@ class SDBCommand(object):
     def __init__(self):
         self.islast = False
 
-    def registerCmd(c : type) -> None:
-        if not issubclass(c, SDBCommand):
-            raise TypeError("{} is not a subclass of {}".format(c, SDBCommand))
-        if not hasattr(c, "cmdName"):
-            raise TypeError("{} does not define cmdName".format(c))
-        allSDBCommands[c.cmdName] = c
+    def registerByName(name : str, c : type) -> None:
+        allSDBCommands[name] = c
 
         #
         # We create an inner class that dispatches the gdb invoke call to the
@@ -50,7 +46,7 @@ class SDBCommand(object):
         #
         class gdbCmd(gdb.Command):
             def __init__(self):
-                gdbCmdname = c.cmdName
+                gdbCmdname = name
                 if hasattr(c, "gdbCmdName"):
                     gdbCmdname = c.gdbCmdName
                 super().__init__(gdbCmdname, gdb.COMMAND_DATA)
@@ -58,6 +54,22 @@ class SDBCommand(object):
                 c().invoke(argstr, from_tty)
 
         gdbCmd()
+        
+    def registerCmd(c : type) -> None:
+        if not issubclass(c, SDBCommand):
+            raise TypeError("{} is not a subclass of {}".format(c, SDBCommand))
+        if not hasattr(c, "cmdName"):
+            raise TypeError("{} does not define cmdName".format(c))
+
+        if isinstance(c.cmdName, str):
+            SDBCommand.registerByName(c.cmdName, c)
+        else:
+            try:
+                for cname in c.cmdName:
+                    SDBCommand.registerByName(cname, c)
+            except TypeError as e:
+                print('Invalid cmdName type in {}'.format(c))
+                raise e
 
     #
     # This function gets called from the gdbCmd inner class above, and
@@ -89,20 +101,6 @@ class SDBCommand(object):
             # the last pipe
             pipe_stages.append(' '.join(tokens))
 
-        # If the last argument to the first pipeline stage is an integer, we
-        # treat that as the input to the pipeline as a convenience feature.
-        #
-        # TODO: This results in a bug with commands like dbuf --level=0 -b 3.
-        input = []
-        try:
-            first_arg = pipe_stages[0]
-            (beginning, space, last) = first_arg.strip().rpartition(' ')
-            if len(last) != 0:
-                input = [gdb.Value(int(last, 0))]
-                pipe_stages[0] = beginning
-        except:
-            pass
-
         # Build the pipeline by constructing each of the commands we want to
         # use and building a list of them.
         pipeline = []
@@ -132,9 +130,9 @@ class SDBCommand(object):
             # case so that we don't run into an issue where the pipeline
             # doesn't pull properly because of generator quirks.
             if not isinstance(pipeline[-1], PipeableCommand):
-                SDBCommand.executePipelineTerm(input, pipeline)
+                SDBCommand.executePipelineTerm([], pipeline)
             else:
-                for o in SDBCommand.executePipeline(input, pipeline):
+                for o in SDBCommand.executePipeline([], pipeline):
                     print(o)
 
             if shell_cmd is not None:

@@ -149,7 +149,7 @@ class Null(PipeableCommand):
 registerSDBCommand(Null)
 
 class Echo(PipeableCommand):
-    cmdName = 'echo'
+    cmdName = ['echo', 'cc']
     def __init__(self, arg=""):
         super().__init__()
         self.arg = arg
