@@ -6,18 +6,16 @@ import argparse
 from crash.commands.zfs.Pipe import Locator, PipeableCommand
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import print_histogram
-from crash.commands.zfs.avl import Avl
 
 class Metaslab(Locator):
     def __init__(self, args = ""):
         super().__init__("metaslab", outputType="metaslab_t*",
-                inputTypes={"spa_t*": self.metaslab_from_spa,
-                    "vdev_t*": self.metaslab_from_vdev,
+                inputTypes={ "vdev_t*": self.metaslab_from_vdev,
                     "metaslab_t*": self.metaslab_from_metaslab})
         try:
             parser = argparse.ArgumentParser(prog='metaslab')
             parser.add_argument('-H', '--histogram',action='store_true',
-                    help='histogram flag' )
+                    default=False, help='histogram flag' )
             self.args = parser.parse_args(gdb.string_to_argv(args))
         except:
             pass
@@ -48,10 +46,12 @@ class Metaslab(Locator):
     def metaslab_from_metaslab(self, msp):
         yield msp
 
-    def metaslab_from_spa(self, spa):
-        vdevs = PipeableCommand.executePipeline([spa], [Vdev()])
-        for vd in vdevs:
-            yield from self.metaslab_from_vdev(vd)
+# XXX - removed because of circular dependencies when importing Vdev class
+#
+#    def metaslab_from_spa(self, spa):
+#        vdevs = PipeableCommand.executePipeline([spa], [Vdev()])
+#        for vd in vdevs:
+#            yield from self.metaslab_from_vdev(vd)
 
     def metaslab_from_vdev(self, vdev):
         for m in range(0, vdev['vdev_ms_count']):

@@ -13,8 +13,7 @@ from crash.commands.zfs.metaslab import Metaslab
 
 class Spa(Locator):
     def __init__(self, args=""):
-        super().__init__('spa', outputType="spa_t*",
-            inputTypes={"spa_t*": self.spa_from_spa})
+        super().__init__('spa', outputType="spa_t*")
         try:
             parser = argparse.ArgumentParser(description = "spa command")
             parser.add_argument('-v', '--vdevs',action='store_true',
@@ -26,7 +25,9 @@ class Spa(Locator):
             self.args = parser.parse_args(gdb.string_to_argv(args))
             self.arg_string = ""
             if self.args.metaslab:
-                self.arg_string += "-m"
+                self.arg_string += "-m "
+            if self.args.histogram:
+                self.arg_string += "-H "
 
         except:
             pass
@@ -40,9 +41,6 @@ class Spa(Locator):
                 vdevs = PipeableCommand.executePipeline(
                         [spa], [Vdev()])
                 Vdev(self.arg_string).pretty_print(vdevs, 5)
-
-    def spa_from_spa(self, spa):
-        yield spa
 
     def noInput(self):
         input = PipeableCommand.executePipeline(

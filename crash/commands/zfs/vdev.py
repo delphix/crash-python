@@ -19,7 +19,12 @@ class Vdev(Locator):
             parser = argparse.ArgumentParser(description = "vdev command")
             parser.add_argument('-m', '--metaslab',action='store_true',
                     default=False, help='metaslab flag' )
+            parser.add_argument('-H', '--histogram',action='store_true',
+                    default=False, help='histogram flag' )
             self.args = parser.parse_args(gdb.string_to_argv(args))
+            self.arg_string = ""
+            if self.args.histogram:
+                self.arg_string += "-H "
         except:
             pass
 
@@ -49,7 +54,7 @@ class Vdev(Locator):
                 level = 2
             if self.args.metaslab:
                 metaslabs = PipeableCommand.executePipeline( [vdev], [Metaslab()])
-                Metaslab().pretty_print(metaslabs, indent + 5)
+                Metaslab(self.arg_string).pretty_print(metaslabs, indent + 5)
 
 
     # arg is gdb.Value of type spa_t*
