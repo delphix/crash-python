@@ -157,7 +157,6 @@ class Locator(PipeableCommand):
                                     self.cmdName,
                                     out_type, o.type))
                             yield o
-                        yield from f(i)
                         raise StopIteration
             except StopIteration:
                 continue
@@ -342,6 +341,14 @@ class Type(PipeableCommand):
             print(o.type)
             yield o
 Type()
+
+class Address(PipeableCommand):
+    def __init__(self, arg=""):
+        super().__init__('address')
+    def call(self, input):
+        for o in input:
+            yield o.address
+Address()
 
 class LineCount(PipeableCommand):
     def __init__(self, arg=""):

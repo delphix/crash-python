@@ -5,10 +5,15 @@ import gdb
 import argparse
 from crash.commands.zfs.zfs_util import symbol_address
 from crash.commands.zfs.Pipe import Locator
+from crash.commands.zfs.Pipe import PipeableCommand
+from crash.commands.zfs.Pipe import Walk
+from crash.commands.zfs.cast import Cast
 
 class Dbuf(Locator):
     def __init__(self, arg=""):
-        super().__init__('dbuf', outputType='dmu_buf_impl_t*')
+        super().__init__('dbuf',
+                outputType='dmu_buf_impl_t*',
+                inputTypes={'dnode_t*': self.dbufs_from_dnode})
         parser = argparse.ArgumentParser(prog='dbuf')
         parser.add_argument('-l', '--level', type=int,
                 help='filter: only dbufs of this level' )
@@ -41,6 +46,14 @@ class Dbuf(Locator):
         if self.args.has_holds and db['db_holds']['rc_count'] == 0:
             return False
         return True
+
+    # dn is gdb.Value of type dnode_t*
+    # need to yield gdb.Value's of type dmu_buf_impl_t*
+    def dbufs_from_dnode(self, dn):
+        for db in PipeableCommand.executePipeline(
+                [dn['dn_dbufs'].address],
+                [Walk(), Cast('dmu_buf_impl_t*')]):
+            yield db
 
     def noInput(self):
         dbuf_hash = symbol_address("dbuf_hash_table")
