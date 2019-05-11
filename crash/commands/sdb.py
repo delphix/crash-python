@@ -19,7 +19,7 @@ allSDBCommands = {}
 class SDBCommand(object):
     inputType : Optional[str] =None
     cmdName : Union[List[str],str] = ''
-    def __init__(self, args=""):
+    def __init__(self):
         self.islast = False
 
     @staticmethod
@@ -39,7 +39,7 @@ class SDBCommand(object):
                     gdbCmdname = c.gdbCmdName
                 super().__init__(gdbCmdname, gdb.COMMAND_DATA)
             def invoke(self, argstr : str, from_tty : bool) -> None:
-                c().invoke(argstr, from_tty)
+                c.invoke(argstr, from_tty)
 
         gdbCmd()
 
@@ -64,7 +64,8 @@ class SDBCommand(object):
     # This function gets called from the gdbCmd inner class above, and
     # contains the core pipeline logic.
     #
-    def invoke(self, argstr : str, from_tty : bool) -> None:
+    @classmethod
+    def invoke(cls, argstr : str, from_tty : bool) -> None:
         shell_cmd = None
         # Parse the argument string. Each pipeline stage is delimited by
         # a pipe character "|". If there is a "!" character detected, then
@@ -95,7 +96,7 @@ class SDBCommand(object):
         # Build the pipeline by constructing each of the commands we want to
         # use and building a list of them.
         pipeline = []
-        pipeline.append(type(self)(pipe_stages[0]))
+        pipeline.append(cls(pipe_stages[0]))
         for stage in pipe_stages[1:]:
             (cmdname, space, args) = stage.strip().partition(' ')
             try:
