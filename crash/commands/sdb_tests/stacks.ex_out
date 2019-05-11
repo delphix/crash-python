@@ -1,0 +1,620 @@
+ THREAD   STATE                          COUNT
+=============================================
+317      INTERRUPTABLE                    101
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         taskq_thread+0x323 [spl]
+         kthread+0x121
+         ret_from_fork
+
+253      IDLE                              27
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         rescuer_thread+0x317
+         kthread+0x121
+         ret_from_fork
+
+240      INTERRUPTABLE                     24
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         freezable_schedule+0x15
+         futex_wait_queue_me+0xc4
+         futex_wait+0x10a
+         do_futex+0x325
+         SYSC_futex+0x127
+         SyS_futex+0x13b
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+313      IDLE                              17
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         worker_thread+0xba
+         kthread+0x121
+         ret_from_fork
+
+249      INTERRUPTABLE                     17
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0xb9
+         schedule_hrtimeout_range+0x13
+         ep_poll+0x29c
+         SYSC_epoll_wait+0xc1
+         SyS_epoll_wait+0xc6
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+314      INTERRUPTABLE                     15
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0x181
+         schedule_hrtimeout_range+0x13
+         poll_schedule_timeout+0x45
+         do_poll+0x2a0
+         do_sys_poll+0x3c0
+         SYSC_poll+0xb
+         SyS_poll+0x30
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+256      INTERRUPTABLE                     12
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0x181
+         schedule_hrtimeout_range+0x13
+         ep_poll+0x29c
+         SYSC_epoll_wait+0xc1
+         SyS_epoll_wait+0xc6
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+315      INTERRUPTABLE                      9
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         do_wait+0x1cb
+         kernel_wait4+0x89
+         SYSC_wait4+0x95
+         SyS_wait4+0xe
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+312      INTERRUPTABLE                      9
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         cv_wait_common+0x11f [spl]
+         __cv_wait_sig+0x15 [spl]
+         zthr_procedure+0x51 [zfs]
+         thread_generic_wrapper+0x74 [spl]
+         kthread+0x121
+         ret_from_fork
+
+208      INTERRUPTABLE                      8
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0x181
+         schedule_hrtimeout_range+0x13
+         poll_schedule_timeout+0x45
+         do_select+0x562
+         core_sys_select+0x1d7
+         SYSC_select+0x86
+         SyS_select+0xb7
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+17       INTERRUPTABLE                      8
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         smpboot_thread_fn+0x166
+         kthread+0x121
+         ret_from_fork
+
+318      INTERRUPTABLE                      6
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         freezable_schedule+0xe
+         do_nanosleep+0x89
+         hrtimer_nanosleep+0xd8
+         SYSC_nanosleep+0x65
+         SyS_nanosleep+0x72
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+201      INTERRUPTABLE                      6
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         pipe_wait+0x70
+         pipe_read+0x21f
+         call_read_iter+0x15
+         new_sync_read+0xe4
+         __vfs_read+0x29
+         vfs_read+0x8e
+         SYSC_read+0x2c
+         SyS_read+0x55
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+258      INTERRUPTABLE                      4
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0xb9
+         schedule_hrtimeout_range+0x13
+         poll_schedule_timeout+0x45
+         do_select+0x562
+         core_sys_select+0x1d7
+         SYSC_select+0x86
+         SyS_select+0xb7
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+213      INTERRUPTABLE                      3
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         sigsuspend+0x4a
+         SYSC_rt_sigsuspend+0x2c
+         SyS_rt_sigsuspend+0x48
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+58       INTERRUPTABLE                      3
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         scsi_error_handler+0x1d9
+         kthread+0x121
+         ret_from_fork
+
+308      INTERRUPTABLE                      2
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0xb9
+         schedule_hrtimeout_range+0x13
+         __cv_timedwait_hires+0xf4 [spl]
+         cv_timedwait_hires_common+0x5e [spl]
+         cv_timedwait_sig_hires+0x14 [spl]
+         mmp_thread+0x2c3 [zfs]
+         thread_generic_wrapper+0x74 [spl]
+         kthread+0x121
+         ret_from_fork
+
+307      INTERRUPTABLE                      2
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         __cv_timedwait_common+0xdf [spl]
+         __cv_timedwait_sig+0x16 [spl]
+         txg_thread_wait+0x31 [zfs]
+         txg_sync_thread+0x15e [zfs]
+         thread_generic_wrapper+0x74 [spl]
+         kthread+0x121
+         ret_from_fork
+
+306      INTERRUPTABLE                      2
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         cv_wait_common+0x11f [spl]
+         __cv_wait_sig+0x15 [spl]
+         txg_thread_wait+0x1d [zfs]
+         txg_quiesce_thread+0x147 [zfs]
+         thread_generic_wrapper+0x74 [spl]
+         kthread+0x121
+         ret_from_fork
+
+257      INTERRUPTABLE                      2
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0x181
+         schedule_hrtimeout_range+0x13
+         freezable_schedule_hrtimeout_range+0x15
+         do_sigtimedwait+0x18f
+         SYSC_rt_sigtimedwait+0x88
+         SyS_rt_sigtimedwait+0xe
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+235      RUNNING                            2
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         exit_to_usermode_loop+0x59
+         prepare_exit_to_usermode+0x77
+         common_interrupt
+
+204      INTERRUPTABLE                      2
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         sys_pause+0x30
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+140      INTERRUPTABLE                      2
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0xb9
+         schedule_hrtimeout_range+0x13
+         poll_schedule_timeout+0x45
+         do_poll+0x2a0
+         do_sys_poll+0x3c0
+         SYSC_poll+0x76
+         SyS_poll+0x9b
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+316      RUNNING                            1
+         sysrq_handle_crash+0x16
+         __handle_sysrq+0x9f
+         write_sysrq_trigger+0x34
+         proc_reg_write+0x45
+         __vfs_write+0x1b
+         vfs_write+0xb1
+         SYSC_write+0x2c
+         SyS_write+0x55
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+254      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x1cf
+         inet_csk_wait_for_connect+0x141
+         inet_csk_accept+0x246
+         inet_accept+0x45
+         kernel_accept+0x59
+         0xffffffffc0ee6cf3
+         0xffffaf7ad83a3e70
+         slab_post_alloc_hook+0x97
+         slab_alloc_node+0x1dd
+         __kmalloc_node+0x21b
+         0xffffffffc0ee7629
+         0xffffffffc0ee7629
+         0xffff8c4fffc22880
+
+237      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0x181
+         schedule_hrtimeout_range+0x13
+         poll_schedule_timeout+0x45
+         do_poll+0x2a0
+         do_sys_poll+0x3c0
+         SYSC_poll+0xb
+         SyS_poll+0x30
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+         0xffffffffffffffff
+
+232      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x1cf
+         inet_csk_wait_for_connect+0x141
+         inet_csk_accept+0x246
+         inet_accept+0x45
+         SYSC_accept4+0xff
+         SyS_accept4+0xa
+         SYSC_accept+0xa
+         SyS_accept+0x10
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+225      RUNNING                            1
+         
+
+181      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         do_syslog+0x494
+         kmsg_read+0x44
+         proc_reg_read+0x45
+         __vfs_read+0x1b
+         vfs_read+0x8e
+         SYSC_read+0x2c
+         SyS_read+0x55
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+160      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x1cf
+         __skb_wait_for_more_packets+0x11f
+         __skb_recv_datagram+0x6f
+         skb_recv_datagram+0x3f
+         netlink_recvmsg+0x57
+         sock_recvmsg_nosec+0x1e
+         sock_recvmsg+0x43
+         ___sys_recvmsg+0xf5
+         __sys_recvmsg+0x51
+         SYSC_recvmsg+0xd
+         SyS_recvmsg+0x12
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+158      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         __cv_timedwait_common+0xdf [spl]
+         __cv_timedwait_sig+0x16 [spl]
+         zfs_zevent_wait+0x54 [zfs]
+         zfs_ioc_events_next+0x64 [zfs]
+         zfsdev_ioctl+0x5e2 [zfs]
+         vfs_ioctl+0x1c
+         do_vfs_ioctl+0xa8
+         SYSC_ioctl+0x5a
+         SyS_ioctl+0x79
+         do_syscall_64+0x73
+         entry_SYSCALL_64
+
+155      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         0xffffffffc0b42c86
+         0xffffaf7ac4a6fec8
+
+154      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         0xffffffffc0b42c86
+         0xffffaf7ac4a67ec0
+
+153      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         0xffffffffc0b42c86
+         0xffffaf7ac4a5fec8
+
+152      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         0xffffffffc0b42c86
+         0xffffaf7ac4a57ec8
+
+151      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         0xffffffffc0b42c86
+         0xffffaf7ac4a4fec8
+
+150      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         0xffffffffc0b42c86
+         0xffffaf7ac4a47ec8
+
+149      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         0xffffffffc0b42c86
+         0xffffaf7ac4a3fec8
+
+148      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         0xffffffffc0b42c86
+         0xffffaf7ac19a7ec8
+
+147      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x1cf
+         0xffffffffc0b42c86
+         __switch_to_asm
+         0xffff8c4ff4198d00
+         0xffffffffc0ad1799
+         0xffffaf7ac1c6fe90
+
+135      INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         irq_wait_for_interrupt+0x30
+         irq_thread+0xb3
+         kthread+0x121
+         ret_from_fork
+
+74       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         __cv_timedwait_common+0xdf [spl]
+         __cv_timedwait_sig+0x16 [spl]
+         l2arc_feed_thread+0x66 [zfs]
+         thread_generic_wrapper+0x74 [spl]
+         kthread+0x121
+         ret_from_fork
+
+72       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0xb9
+         schedule_hrtimeout_range+0x13
+         __cv_timedwait_hires+0xf4 [spl]
+         cv_timedwait_hires_common+0x5e [spl]
+         cv_timedwait_sig_hires+0x14 [spl]
+         dbuf_evict_thread+0x5e [zfs]
+         thread_generic_wrapper+0x74 [spl]
+         kthread+0x121
+         ret_from_fork
+
+70       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_hrtimeout_range_clock+0xb9
+         schedule_hrtimeout_range+0x13
+         __cv_timedwait_hires+0xf4 [spl]
+         cv_timedwait_hires_common+0x5e [spl]
+         cv_timedwait_sig_hires+0x14 [spl]
+         zthr_procedure+0xa4 [zfs]
+         thread_generic_wrapper+0x74 [spl]
+         kthread+0x121
+         ret_from_fork
+
+43       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         ecryptfs_threadfn+0x139
+         kthread+0x121
+         ret_from_fork
+
+41       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         kswapd_try_to_sleep+0x58e
+         kswapd+0x67b
+         kthread+0x121
+         ret_from_fork
+
+30       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         khugepaged_wait_work+0x292
+         khugepaged+0x3f6
+         kthread+0x121
+         ret_from_fork
+
+29       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         ksm_scan_thread+0x339
+         kthread+0x121
+         ret_from_fork
+
+28       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         kcompactd+0x151
+         kthread+0x121
+         ret_from_fork
+
+26       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         oom_reaper+0x152
+         kthread+0x121
+         ret_from_fork
+
+25       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         schedule_timeout_interruptible+0x1f
+         watchdog+0x57
+         kthread+0x121
+         ret_from_fork
+
+23       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         kauditd_thread+0x182
+         kthread+0x121
+         ret_from_fork
+
+22       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         rcu_tasks_kthread+0x35f
+         kthread+0x121
+         ret_from_fork
+
+20       INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         devtmpfsd+0x159
+         kthread+0x121
+         ret_from_fork
+
+10       IDLE                               1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         rcu_gp_kthread+0x8df
+         kthread+0x121
+         ret_from_fork
+
+9        IDLE                               1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         schedule_timeout+0x15d
+         rcu_gp_kthread+0x53a
+         kthread+0x121
+         ret_from_fork
+
+3        INTERRUPTABLE                      1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule+0x2c
+         kthreadd+0x2e8
+         ret_from_fork
+
+1        RUNNING                            1
+         context_switch+0xeb
+         __schedule+0x291
+         schedule_idle+0x22
+         do_idle+0x14d
+         cpu_startup_entry+0x73
+         rest_init+0xae
+         start_kernel+0x4dc
+         x86_64_start_reservations+0x24
+         x86_64_start_kernel+0x74
+         secondary_startup_64
+
+Total unique stacks: 58
+Matching unique stacks: 58
