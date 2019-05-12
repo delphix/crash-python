@@ -3,7 +3,7 @@
 
 import gdb
 import argparse
-from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.sdb import SDBCommand
 from crash.commands.locator import Locator
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.avl import Avl
@@ -60,5 +60,3 @@ class Spa(Locator, PrettyPrinter):
             if self.args.poolnames and spa['spa_name'].string() not in self.args.poolnames:
                 continue
             yield spa
-
-registerSDBCommand(Spa)

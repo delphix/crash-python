@@ -3,7 +3,7 @@
 
 import gdb
 import argparse
-from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.sdb import SDBCommand
 from crash.commands.locator import Locator
 from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter, PrettyPrint
@@ -22,8 +22,6 @@ class RangeTree(PrettyPrinter):
             rt['rt_root']['avl_numnodes'],
             rt['rt_space']))
         SDBCommand.executePipelineTerm([rt], [RangeSeg(), PrettyPrint()])
-
-registerSDBCommand(RangeTree)
 
 class RangeSeg(Locator, PrettyPrinter):
     cmdName = 'range_seg'
@@ -47,6 +45,3 @@ class RangeSeg(Locator, PrettyPrinter):
     def from_range_tree(self, rt):
         yield from SDBCommand.executePipeline([rt['rt_root'].address],
             [Avl(), Cast('range_seg_t *')])
-
-registerSDBCommand(RangeSeg)
-

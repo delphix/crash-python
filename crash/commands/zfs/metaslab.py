@@ -4,7 +4,6 @@
 import gdb
 import argparse
 from crash.commands.zfs.zfs_init import *
-from crash.commands.sdb import registerSDBCommand, SDBCommand
 from crash.commands.locator import Locator
 from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
@@ -130,5 +129,3 @@ class Metaslab(Locator, PrettyPrinter):
         for m in range(0, vdev['vdev_ms_count']):
             msp = vdev['vdev_ms'][m]
             yield msp
-
-registerSDBCommand(Metaslab)

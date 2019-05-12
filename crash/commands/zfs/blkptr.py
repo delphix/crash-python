@@ -6,7 +6,6 @@
 
 import gdb
 from crash.commands.zfs.zfs_init import *
-from crash.commands.sdb import registerSDBCommand
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.zfs_util import enum_lookup
 from typing import Callable
@@ -101,6 +100,3 @@ SYNOPSIS
             Blkptr.print_blkptr_embedded(bp, type)
         else:
             Blkptr.print_blkptr_normal(bp, type)
-
-registerSDBCommand(Blkptr)
-

@@ -4,7 +4,7 @@
 import gdb
 import argparse
 from crash.commands.zfs.list import List
-from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.sdb import SDBCommand
 from crash.commands.walk import Walker
 
 class MultiList(Walker):
@@ -22,5 +22,3 @@ class MultiList(Walker):
         for i in range(num_sublists):
             sublist = sublists[i]['mls_list'].address
             yield from SDBCommand.executePipeline([sublist], [List()])
-
-registerSDBCommand(MultiList)

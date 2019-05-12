@@ -2,7 +2,7 @@
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
 import gdb
-from crash.commands.sdb import registerSDBCommand, SDBCommand, PipeableCommand
+from crash.commands.sdb import SDBCommand, PipeableCommand
 from crash.commands.zfs.zfs_util import parse_type
 from typing import Iterable, Dict, Type
 
@@ -15,11 +15,11 @@ class Walker(PipeableCommand):
     def __init__(self):
         super().__init__()
 
-    @staticmethod
-    def registerCmd(c : Type[SDBCommand]) -> None:
-        assert issubclass(c, Walker), '{} not instance of Walker'.format(c)
-        assert c.inputType is not None
-        Walker.allWalkers[c.inputType] = c
+    # When a subclass is created, register it
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        assert cls.inputType is not None
+        Walker.allWalkers[cls.inputType] = cls
 
     def walk(self, input : Iterable[gdb.Value]) -> gdb.Value:
         raise NotImplementedError
@@ -71,5 +71,3 @@ class Walk(PipeableCommand):
             print("\t%-20s %-20s" % ("WALKER", "TYPE"))
             for t, c in baked:
                 print("\t%-20s %-20s" % (c().cmdName, t))
-
-registerSDBCommand(Walk)

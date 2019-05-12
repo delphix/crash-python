@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
-from crash.commands.sdb import SDBCommand,registerSDBCommand
+from crash.commands.sdb import SDBCommand
 from crash.commands.zfs.zfs_util import parse_type
 from typing import Dict, Iterable, Type
 import gdb
@@ -14,11 +14,11 @@ class PrettyPrinter(SDBCommand):
     def __init__(self):
         super().__init__()
 
-    @staticmethod
-    def registerCmd(c : Type[SDBCommand]) -> None:
-        assert c.inputType is not None
-        assert issubclass(c, PrettyPrinter), '{} not instance of PrettyPrinter'.format(c)
-        PrettyPrinter.allPrinters[c.inputType] = c
+    # When a subclass is created, register it
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        assert cls.inputType is not None
+        PrettyPrinter.allPrinters[cls.inputType] = cls
         
     def pretty_print(self, input : gdb.Value) -> None:
         raise NotImplementedError
@@ -66,5 +66,3 @@ class PrettyPrint(SDBCommand):
             for t, c in baked:
                 if hasattr(c, "pretty_print"):
                     print("\t%-20s %-20s" % (c().cmdName, t))
-
-registerSDBCommand(PrettyPrint)

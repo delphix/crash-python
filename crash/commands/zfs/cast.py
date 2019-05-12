@@ -4,7 +4,6 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from crash.commands.sdb import registerSDBCommand
 from crash.commands.sdb import PipeableCommand
 from crash.commands.zfs.zfs_util import parse_type
 
@@ -27,5 +26,3 @@ class Cast(PipeableCommand):
     def call(self, input):
         for listaddr in input:
             yield listaddr.cast(self.args.cast_type)
-
-registerSDBCommand(Cast)

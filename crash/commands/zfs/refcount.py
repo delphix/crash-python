@@ -4,7 +4,6 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from crash.commands.sdb import registerSDBCommand
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.list import List
 
@@ -45,6 +44,3 @@ class Refcount(PrettyPrinter):
         for ref in List().walk(refcnt['rc_removed']):
             cast_ref = ref.cast(gdb.lookup_type('reference_t')).pointer()
             self.print_reference(cast_remove, removed=True)
-
-
-registerSDBCommand(Refcount)

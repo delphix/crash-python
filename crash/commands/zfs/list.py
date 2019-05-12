@@ -4,7 +4,6 @@
 import gdb
 import argparse
 from typing import Callable, Any
-from crash.commands.sdb import registerSDBCommand
 from crash.commands.walk import Walker
 
 class List(Walker):
@@ -23,8 +22,6 @@ class List(Walker):
             yield gdb.Value(int(node) - offset).cast(gdb.lookup_type('void').pointer())
             node = node['next']
 
-registerSDBCommand(List)
-
 class LinuxList(Walker):
     """ walk linux list_head """
 
@@ -41,5 +38,3 @@ class LinuxList(Walker):
         while node != llist:
             yield gdb.Value(int(node) - self.args.offset).cast(gdb.lookup_type('void').pointer())
             node = node['next']
-
-registerSDBCommand(LinuxList)

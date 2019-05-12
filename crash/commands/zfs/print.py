@@ -3,7 +3,6 @@
 
 import gdb
 from crash.commands.sdb import PipeableCommand
-from crash.commands.sdb import registerSDBCommand
 
 class Print(PipeableCommand):
     cmdName = 'print'
@@ -21,5 +20,3 @@ class Print(PipeableCommand):
             if len(self.args) > 0:
                 cmd += "." + self.args
             yield gdb.parse_and_eval(cmd)
-
-registerSDBCommand(Print)

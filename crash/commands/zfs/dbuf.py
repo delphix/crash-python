@@ -4,7 +4,7 @@
 import gdb
 import argparse
 from crash.commands.zfs.zfs_util import symbol_address
-from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.sdb import SDBCommand
 from crash.commands.locator import Locator
 from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
@@ -106,6 +106,3 @@ class Dbuf(Locator, PrettyPrinter):
                 if self.filter(db):
                     yield db
                 db = db['db_hash_next']
-
-registerSDBCommand(Dbuf)
-

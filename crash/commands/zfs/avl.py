@@ -4,7 +4,6 @@
 import gdb
 import argparse
 from crash.commands.walk import Walker
-from crash.commands.sdb import registerSDBCommand
 
 class Avl(Walker):
     """ walk avl tree """
@@ -29,5 +28,3 @@ class Avl(Walker):
 
         rchild = node.dereference()['avl_child'][1]
         yield from Avl.helper(rchild, offset)
-
-registerSDBCommand(Avl)

@@ -17,13 +17,33 @@ allSDBCommands = {}
 # `call` method.
 #
 class SDBCommand(object):
-    inputType : Optional[str] =None
-    cmdName : Union[List[str],str] = ''
+    inputType : Optional[str] = None
+
+    # Subclasses should fill in this attribute if they want to be
+    # registered as "real" gdb commands.  Typically all concrete
+    # subclasses would do this
+    cmdName : Union[List[str],str] = None
+
     def __init__(self):
         self.islast = False
 
+    # When a subclass is created, if it has a 'cmdName' property, then
+    # register it with gdb
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.cmdName:
+            if isinstance(cls.cmdName, str):
+                SDBCommand.registerGdbCmd(cls.cmdName, cls)
+            else:
+                try:
+                    for cname in cls.cmdName:
+                        SDBCommand.registerGdbCmd(cname, cls)
+                except TypeError as e:
+                    print('Invalid cmdName type in {}'.format(cls))
+                    raise e
+
     @staticmethod
-    def registerByName(name : str, c : type) -> None:
+    def registerGdbCmd(name : str, c : type) -> None:
         allSDBCommands[name] = c
 
         #
@@ -42,23 +62,6 @@ class SDBCommand(object):
                 c.invoke(argstr, from_tty)
 
         gdbCmd()
-
-    @staticmethod
-    def registerCmd(c : Type["SDBCommand"]) -> None:
-        if not issubclass(c, SDBCommand):
-            raise TypeError("{} is not a subclass of {}".format(c, SDBCommand))
-        if not hasattr(c, "cmdName"):
-            raise TypeError("{} does not define cmdName".format(c))
-
-        if isinstance(c.cmdName, str):
-            SDBCommand.registerByName(c.cmdName, c)
-        else:
-            try:
-                for cname in c.cmdName:
-                    SDBCommand.registerByName(cname, c)
-            except TypeError as e:
-                print('Invalid cmdName type in {}'.format(c))
-                raise e
 
     #
     # This function gets called from the gdbCmd inner class above, and
@@ -179,20 +182,6 @@ class SDBCommand(object):
     # called if this is the last thing in the pipeline
     def setIsLast(self):
         self.islast = True
-#
-# Some "abstract" subclasses of SDBCommand have their own registration logic
-# (Walkers, PrettyPrinter), so we walk through the mro for the class and call
-# register for each one. Any class that gets subclassed that doesn't have
-# registration logic should define a registerCmd function that does nothing.
-#
-def registerSDBCommand(c : Type[SDBCommand]) -> None:
-    for c2 in c.__mro__:
-        # We skip registering c with c, because if it needs to register itself
-        # it can do so, and this avoids double-calling other registration
-        # functions in leaf classes that don't override registerCmd to be a
-        # no-op.
-        if hasattr(c2, "registerCmd") and c2 != c:
-            c2.registerCmd(c) # type: ignore
 
 #
 # Commands whose call function yields an iterable of some kind; usually a
@@ -203,10 +192,6 @@ class PipeableCommand(SDBCommand):
         super().__init__()
         rv = self.call([])
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
-
-    @staticmethod
-    def registerCmd(c : Type[SDBCommand]) -> None:
-        pass
 
 #
 # A pipe command that massages its input types into the a different type. This
@@ -245,5 +230,3 @@ class Coerce(PipeableCommand):
     def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
         for i in input:
             yield self.coerce(i)
-
-registerSDBCommand(Coerce)

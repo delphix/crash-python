@@ -2,7 +2,7 @@
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
 import gdb
-from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.sdb import SDBCommand
 from crash.commands.walk import Walker
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands import CrashCommandParser
@@ -108,5 +108,3 @@ class Zio(Walker, PrettyPrinter):
 
         for addr in input:
             yield from self.walk(addr, doPrint=True)
-
-registerSDBCommand(Zio)

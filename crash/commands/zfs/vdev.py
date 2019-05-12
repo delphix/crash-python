@@ -3,7 +3,7 @@
 
 import gdb
 import argparse
-from crash.commands.sdb import registerSDBCommand, SDBCommand
+from crash.commands.sdb import SDBCommand
 from crash.commands.locator import Locator
 from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
@@ -81,5 +81,3 @@ class Vdev(Locator, PrettyPrinter):
         for cid in range(0, vdev['vdev_children']):
             cvd = vdev['vdev_child'][cid]
             yield from self.from_vdev(cvd)
-
-registerSDBCommand(Vdev)

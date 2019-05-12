@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
-from crash.commands.sdb import registerSDBCommand,allSDBCommands
+from crash.commands.sdb import allSDBCommands
 from crash.commands.sdb import PipeableCommand
 import gdb
 from typing import Iterable,Deque
@@ -25,7 +25,6 @@ class Type(PipeableCommand):
         for o in input:
             print(o.type)
             yield o
-registerSDBCommand(Type)
 
 class LineCount(PipeableCommand):
     cmdName = 'wc'
@@ -36,7 +35,6 @@ class LineCount(PipeableCommand):
         for o in input:
             i += 1
         yield gdb.Value(i)
-registerSDBCommand(LineCount)
 
 class Head(PipeableCommand):
     cmdName = 'head'
@@ -55,7 +53,6 @@ class Head(PipeableCommand):
                 break
             yield o
             self.args.count -= 1
-registerSDBCommand(Head)
 
 from collections import deque
 class Tail(PipeableCommand):
@@ -75,7 +72,6 @@ class Tail(PipeableCommand):
             q.append(o)
         for o in q:
             yield o
-registerSDBCommand(Tail)
 
 import re
 def parseMember(value, memberString, strictChecking=False):
@@ -118,8 +114,6 @@ class Member(PipeableCommand):
         for i in input:
             yield parseMember(i, self.args)
 
-registerSDBCommand(Member)
-
 class Filter(PipeableCommand):
     cmdName = 'filter'
     def __init__(self, arg=""):
@@ -135,7 +129,6 @@ class Filter(PipeableCommand):
             #print(cmd)
             if (int(gdb.parse_and_eval(cmd)) != 0):
                 yield i
-registerSDBCommand(Filter)
 
 class Null(PipeableCommand):
     cmdName = 'null'
@@ -146,7 +139,6 @@ class Null(PipeableCommand):
         for i in input:
             pass
         return []
-registerSDBCommand(Null)
 
 class Echo(PipeableCommand):
     cmdName = ['echo', 'cc']
@@ -159,6 +151,3 @@ class Echo(PipeableCommand):
             yield gdb.Value(int(o, 0))
         for o in input:
             yield o
-registerSDBCommand(Echo)
-
-
