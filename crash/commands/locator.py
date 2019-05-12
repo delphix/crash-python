@@ -24,8 +24,6 @@ def InputHandler(typename : str):
 # workflow.
 #
 class Locator(PipeableCommand):
-    # XXX unused?
-    allLocators : Dict[str, Type['Locator']] = {}
     outputType = ''
     
     def __init__(self):
@@ -38,14 +36,6 @@ class Locator(PipeableCommand):
         # instance, after registration is complete, PrettyPrint continues to
         # work, and the pipeline logic doesn't see an inputType to coerce to.
         self.inputType = None
-
-    # XXX unused?
-    @staticmethod
-    def registerCmd(c : Type[SDBCommand]) -> None:
-        assert issubclass(c, Locator), '{} not instance of Locator'.format(c)
-        assert c.outputType != ''
-        # XXX unused?
-        Locator.allLocators[c.outputType] = c
 
     # subclass may override this
     def noInput(self):
