@@ -23,6 +23,7 @@ class Metaslab(Locator, PrettyPrinter):
                     default=False, help='histogram flag' )
             parser.add_argument('-w', '--weight',action='store_true',
                     default=False, help='weight flag' )
+            parser.add_argument('metaslab_ids', nargs='*', type=int)
             self.args = parser.parse_args(gdb.string_to_argv(args))
         except:
             pass
@@ -126,6 +127,16 @@ class Metaslab(Locator, PrettyPrinter):
 
     @InputHandler('vdev_t*')
     def from_vdev(self, vdev):
-        for m in range(0, vdev['vdev_ms_count']):
-            msp = vdev['vdev_ms'][m]
-            yield msp
+        if self.args.metaslab_ids:
+            # yield the requested metaslabs
+            for id in self.args.metaslab_ids:
+                if id >= vdev['vdev_ms_count']:
+                    raise TypeError('metaslab id {} not valid; there are only {} metaslabs in vdev id {}'.format(
+                        id,
+                        vdev['vdev_ms_count'],
+                        vdev['vdev_id']))
+                yield vdev['vdev_ms'][id]
+        else:
+            for m in range(0, vdev['vdev_ms_count']):
+                msp = vdev['vdev_ms'][m]
+                yield msp

@@ -37,6 +37,7 @@ tests = {'startup': '',
          'dbuf': 'dbuf',
          'dbuf_filter': 'dbuf --level=0 -b 3',
          'dbuf_dnode': 'dbuf --level=0 -b 3 -H | head 4 | tail 1 | member ->db_dnode_handle->dnh_dnode | dbuf',
+         'metaslab_selection': 'spa rpool | vdev 0 | metaslab 50 58 3 | member ->ms_id'
          }
 
 failures = []

@@ -29,7 +29,7 @@ class Vdev(Locator, PrettyPrinter):
                     default=False, help='histogram flag' )
             parser.add_argument('-w', '--weight',action='store_true',
                     default=False, help='weight flag' )
-            parser.add_argument('vdevs', nargs='*', type=int)
+            parser.add_argument('vdev_ids', nargs='*', type=int)
             self.args = parser.parse_args(gdb.string_to_argv(args))
             self.arg_string = ""
             if self.args.histogram:
@@ -76,9 +76,9 @@ class Vdev(Locator, PrettyPrinter):
     # need to yield gdb.Value's of type vdev_t*
     @InputHandler('spa_t*')
     def from_spa(self, spa):
-        if self.args.vdevs:
+        if self.args.vdev_ids:
             # yield the requested top-level vdevs
-            for id in self.args.vdevs:
+            for id in self.args.vdev_ids:
                 if id >= spa['spa_root_vdev']['vdev_children']:
                     raise TypeError('vdev id {} not valid; there are only {} vdevs in {}'.format(
                         id,
@@ -92,7 +92,7 @@ class Vdev(Locator, PrettyPrinter):
     # need to yield gdb.Value's of type vdev_t*
     @InputHandler('vdev_t*')
     def from_vdev(self, vdev):
-        if self.args.vdevs:
+        if self.args.vdev_ids:
             raise TypeError('when providing a vdev, specific child vdevs can not be requested')
         yield vdev
         for cid in range(0, vdev['vdev_children']):
