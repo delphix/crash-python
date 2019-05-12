@@ -44,8 +44,13 @@ class Vdev(Locator, PrettyPrinter):
                 "AUX".ljust(4), "DESCRIPTION")
         print("".ljust(indent), "-" * 60)
 
-        level = 0
         for vdev in vdevs:
+            level = 0
+            pvd = vdev['vdev_parent']
+            while pvd:
+                level += 2
+                pvd = pvd['vdev_parent']
+
             if vdev['vdev_path'] != 0:
                 print("".ljust(indent), hex(vdev).ljust(18),
                      enum_lookup('vdev_state_t', vdev['vdev_state']).ljust(7),
@@ -61,7 +66,6 @@ class Vdev(Locator, PrettyPrinter):
                         vdev['vdev_stat']['vs_aux']).ljust(4),
                      "".ljust(level),
                      vdev['vdev_ops']['vdev_op_type'].string())
-                level = 2
             if self.args.metaslab:
                 metaslabs = SDBCommand.executePipeline( [vdev], [Metaslab()])
                 Metaslab(self.arg_string).pretty_print(metaslabs, indent + 5)
