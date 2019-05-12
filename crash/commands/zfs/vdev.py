@@ -27,10 +27,14 @@ class Vdev(Locator, PrettyPrinter):
                     default=False, help='metaslab flag' )
             parser.add_argument('-H', '--histogram',action='store_true',
                     default=False, help='histogram flag' )
+            parser.add_argument('-w', '--weight',action='store_true',
+                    default=False, help='weight flag' )
             self.args = parser.parse_args(gdb.string_to_argv(args))
             self.arg_string = ""
             if self.args.histogram:
                 self.arg_string += "-H "
+            if self.args.weight:
+                self.arg_string += "-w "
         except:
             pass
 

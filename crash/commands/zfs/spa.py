@@ -27,6 +27,8 @@ class Spa(Locator, PrettyPrinter):
                     help='metaslab flag' )
             parser.add_argument('-H', '--histogram',action='store_true',
                     help='histogram flag' )
+            parser.add_argument('-w', '--weight',action='store_true',
+                    help='weight flag' )
             parser.add_argument('poolnames', nargs='*')
             self.args = parser.parse_args(gdb.string_to_argv(args))
             self.arg_string = ""
@@ -34,6 +36,8 @@ class Spa(Locator, PrettyPrinter):
                 self.arg_string += "-m "
             if self.args.histogram:
                 self.arg_string += "-H "
+            if self.args.weight:
+                self.arg_string += "-w "
 
         except:
             pass

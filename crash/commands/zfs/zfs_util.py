@@ -66,3 +66,10 @@ def print_histogram(histogram, size, offset):
     for i in range(minidx, maxidx + 1):
         print("%3u: %6u %s" % (i + offset, histogram[i],
             '*' * int(histogram[i])))
+
+def nicenum(num, suffix='B'):
+    for unit in [ '', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
+        if (num < 1024):
+            return "{}{}{}".format(int(num), unit, suffix)
+        num /= 1024
+    return "{}{}{}".format(int(num), "Y", suffix)
