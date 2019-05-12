@@ -5,6 +5,7 @@ import gdb
 import argparse
 from crash.commands.sdb import registerSDBCommand, SDBCommand
 from crash.commands.locator import Locator
+from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.zfs_util import print_histogram
 
@@ -16,14 +17,6 @@ class Metaslab(Locator, PrettyPrinter):
     def __init__(self, args = ""):
         super().__init__()
 
-        # Input Types are defined in the constructor because they aren't
-        # actually registered in the locator logic, and python won't let you
-        # do self.foo when creating it outside the construtor. We could
-        # instead use Metaslab.foo, but only after foo has been defined, which
-        # would mean putting the definition at the bottom of the function,
-        # which would be odd.
-        self.inputTypes = {'vdev_t *': self.metaslab_from_vdev,
-                           'metaslab_t *': self.metaslab_from_metaslab}
         try:
             parser = argparse.ArgumentParser(prog='metaslab')
             parser.add_argument('-H', '--histogram',action='store_true',
@@ -55,7 +48,9 @@ class Metaslab(Locator, PrettyPrinter):
                     histogram = sm['sm_phys']['smp_histogram']
                     print_histogram(histogram, 32, sm['sm_shift'])
 
-    def metaslab_from_metaslab(self, msp):
+    # XXX why is this needed?  shouldn't Locator do this for us?
+    @InputHandler('metaslab_t*')
+    def from_metaslab(self, msp):
         yield msp
 
 # XXX - removed because of circular dependencies when importing Vdev class
@@ -65,7 +60,8 @@ class Metaslab(Locator, PrettyPrinter):
 #        for vd in vdevs:
 #            yield from self.metaslab_from_vdev(vd)
 
-    def metaslab_from_vdev(self, vdev):
+    @InputHandler('vdev_t*')
+    def from_vdev(self, vdev):
         for m in range(0, vdev['vdev_ms_count']):
             msp = vdev['vdev_ms'][m]
             yield msp

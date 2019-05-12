@@ -19,7 +19,6 @@ class Spa(Locator, PrettyPrinter):
 
     def __init__(self, args=""):
         super().__init__()
-        self.inputTypes = {}
         try:
             parser = argparse.ArgumentParser(description = "spa command")
             parser.add_argument('-v', '--vdevs',action='store_true',

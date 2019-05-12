@@ -2,11 +2,18 @@
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
 import gdb
+import inspect
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.sdb import PipeableCommand, SDBCommand
 from typing import Iterable, Dict, Callable, Type
 from crash.commands.zfs.zfs_util import parse_type
 from crash.commands.walk import Walk
+
+def InputHandler(typename : str):
+    def decorator(func):
+        func.input_typename_handled = typename
+        return func
+    return decorator
 
 #
 # A Locator is a command that locates objects of a given type.  Subclasses
@@ -17,9 +24,9 @@ from crash.commands.walk import Walk
 # workflow.
 #
 class Locator(PipeableCommand):
+    # XXX unused?
     allLocators : Dict[str, Type['Locator']] = {}
     outputType = ''
-    inputTypes : Dict[str, Callable[[Iterable[gdb.Value]], gdb.Value]] =  {}
     
     def __init__(self):
         super().__init__()
@@ -32,10 +39,12 @@ class Locator(PipeableCommand):
         # work, and the pipeline logic doesn't see an inputType to coerce to.
         self.inputType = None
 
+    # XXX unused?
     @staticmethod
     def registerCmd(c : Type[SDBCommand]) -> None:
         assert issubclass(c, Locator), '{} not instance of Locator'.format(c)
         assert c.outputType != ''
+        # XXX unused?
         Locator.allLocators[c.outputType] = c
 
     # subclass may override this
@@ -46,7 +55,6 @@ class Locator(PipeableCommand):
     # Dispatch to the appropriate instance function based on the type of the
     # input we receive.
     def caller(self, input : Iterable[gdb.Value]) -> gdb.Value:
-        baked = [ (parse_type(k), f) for k, f in self.inputTypes.items() ]
         out_type = parse_type(self.outputType)
         hasInput = False
         for i in input:
@@ -54,9 +62,21 @@ class Locator(PipeableCommand):
 
             # try subclass-specified input types first, so that they can override any other behavior
             try:
-                for t, f in baked:
-                    if i.type == t:
-                        yield from f(i)
+                for (name, method) in inspect.getmembers(self, inspect.ismethod):
+                    #print('checking {} {} of {}'.format(name, method, self))
+                    if not hasattr(method, 'input_typename_handled'):
+                        continue
+
+                    # Cache parsed type by setting an attribute on the
+                    # function that this method is bound to (same place
+                    # the input_typename_handled attribute is set).
+                    # Unfortunately we can't do this in the decorator
+                    # because the gdb types have not been set up yet.
+                    if not hasattr(method, 'input_type_handled'):
+                        method.__func__.input_type_handled = parse_type(method.input_typename_handled)
+
+                    if i.type == method.input_type_handled:
+                        yield from method(i)
                         raise StopIteration
             except StopIteration:
                 continue

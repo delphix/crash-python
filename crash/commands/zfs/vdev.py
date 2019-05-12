@@ -5,6 +5,7 @@ import gdb
 import argparse
 from crash.commands.sdb import registerSDBCommand, SDBCommand
 from crash.commands.locator import Locator
+from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import enum_lookup
@@ -18,14 +19,6 @@ class Vdev(Locator, PrettyPrinter):
     def __init__(self, args = ""):
         super().__init__()
 
-        # Input Types are defined in the constructor because they aren't
-        # actually registered in the locator logic, and python won't let you
-        # do self.foo when creating it outside the construtor. We could
-        # instead use Vdev.foo, but only after foo has been defined, which
-        # would mean putting the definition at the bottom of the function,
-        # which would be odd.
-        self.inputTypes = {'spa_t *': self.vdevs_from_spa,
-                           'vdev_t *': self.vdevs_from_vdev}
         # XXX add flag for "direct children (from vdev) only"?
         # XXX add flag for "top level vdevs (from spa) only"?
         try:
@@ -72,15 +65,17 @@ class Vdev(Locator, PrettyPrinter):
 
     # arg is gdb.Value of type spa_t*
     # need to yield gdb.Value's of type vdev_t*
-    def vdevs_from_spa(self, spa):
-        yield from self.vdevs_from_vdev(spa['spa_root_vdev'])
+    @InputHandler('spa_t*')
+    def from_spa(self, spa):
+        yield from self.from_vdev(spa['spa_root_vdev'])
 
     # arg is gdb.Value of type vdev_t*
     # need to yield gdb.Value's of type vdev_t*
-    def vdevs_from_vdev(self, vdev):
+    @InputHandler('vdev_t*')
+    def from_vdev(self, vdev):
         yield vdev
         for cid in range(0, vdev['vdev_children']):
             cvd = vdev['vdev_child'][cid]
-            yield from self.vdevs_from_vdev(cvd)
+            yield from self.from_vdev(cvd)
 
 registerSDBCommand(Vdev)

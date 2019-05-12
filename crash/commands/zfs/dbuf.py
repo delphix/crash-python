@@ -6,6 +6,7 @@ import argparse
 from crash.commands.zfs.zfs_util import symbol_address
 from crash.commands.sdb import registerSDBCommand, SDBCommand
 from crash.commands.locator import Locator
+from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.walk import Walk
 from crash.commands.zfs.cast import Cast
@@ -43,7 +44,6 @@ class Dbuf(Locator, PrettyPrinter):
 
     def __init__(self, arg=""):
         super().__init__()
-        self.inputTypes={'dnode_t *': self.dbufs_from_dnode}
         parser = argparse.ArgumentParser(prog='dbuf')
         parser.add_argument('-o', '--object', type=int,
                 help='filter: only dbufs of this object' )
@@ -87,12 +87,14 @@ class Dbuf(Locator, PrettyPrinter):
 
     # dn is gdb.Value of type dnode_t*
     # need to yield gdb.Value's of type dmu_buf_impl_t*
-    def dbufs_from_dnode(self, dn):
+    @InputHandler('dnode_t*')
+    def from_dnode(self, dn):
         for db in SDBCommand.executePipeline(
                 [dn['dn_dbufs'].address],
                 [Walk(), Cast('dmu_buf_impl_t*')]):
             yield db
 
+    #@InputHandler(None)
     def noInput(self):
         dbuf_hash = symbol_address("dbuf_hash_table")
         mask = dbuf_hash['hash_table_mask']

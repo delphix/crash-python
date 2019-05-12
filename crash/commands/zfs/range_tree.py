@@ -5,6 +5,7 @@ import gdb
 import argparse
 from crash.commands.sdb import registerSDBCommand, SDBCommand
 from crash.commands.locator import Locator
+from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter, PrettyPrint
 from crash.commands.zfs.avl import Avl
 from crash.commands.zfs.cast import Cast
@@ -31,7 +32,6 @@ class RangeSeg(Locator, PrettyPrinter):
 
     def __init__(self, args=""):
         super().__init__()
-        self.inputTypes = {'range_tree_t *': self.range_seg_from_range_tree}
 
     # arg is iterable of gdb.Value of type range_seg_t*
     def pretty_print(self, segs):
@@ -43,7 +43,8 @@ class RangeSeg(Locator, PrettyPrinter):
 
     # arg is gdb.Value of type range_tree_t*
     # need to yield gdb.Value's of type range_seg_t*
-    def range_seg_from_range_tree(self, rt):
+    @InputHandler('range_tree_t *')
+    def from_range_tree(self, rt):
         yield from SDBCommand.executePipeline([rt['rt_root'].address],
             [Avl(), Cast('range_seg_t *')])
 
