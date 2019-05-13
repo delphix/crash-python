@@ -21,11 +21,7 @@ def sizeof(name : str) -> int:
 
 def offsetof(name : str, field_name : str) -> int:
     typ = gdb.lookup_type(name)
-    for field in typ.fields():
-        if field.name != field_name:
-            continue
-        return int(field.bitpos / 8)
-    return int(-1)
+    return int(gdb.Value(0).cast(typ.pointer())[field_name].address)
 
 
 def enum_lookup(enum_type_name, value):
