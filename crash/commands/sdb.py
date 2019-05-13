@@ -22,9 +22,9 @@ class SDBCommand(object):
     # Subclasses should fill in this attribute if they want to be
     # registered as "real" gdb commands.  Typically all concrete
     # subclasses would do this
-    cmdName : Union[List[str],str] = None
+    cmdName : Optional[Union[List[str],str]] = None
 
-    def __init__(self):
+    def __init__(self, args=''):
         self.islast = False
 
     # When a subclass is created, if it has a 'cmdName' property, then
@@ -43,7 +43,7 @@ class SDBCommand(object):
                     raise e
 
     @staticmethod
-    def registerGdbCmd(name : str, c : type) -> None:
+    def registerGdbCmd(name : str, c : Type["SDBCommand"]) -> None:
         allSDBCommands[name] = c
 
         #

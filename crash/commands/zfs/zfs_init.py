@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
+from typing import Callable
+import gdb
+
 SPA_MINBLOCKSHIFT = 9
 
 SPA_LSIZEBITS = 16
@@ -15,6 +18,7 @@ SPA_DVAS_PER_BP = 3
 BP_EMBEDDED_TYPE_DATA = 0
 BP_EMBEDDED_TYPE_MOOCH_BYTESWAP = 1
 BP_EMBEDDED_TYPE_REDACTED = 2
+ZIO_CHECKSUM_OFF = 2
 
 P2PHASE =     lambda x, align : ((x) & ((align) - 1))
 BF64_DECODE = lambda x, low, len : P2PHASE(x >> low, 1 << len)
@@ -30,7 +34,7 @@ BP_IS_GANG =     lambda bp : False if BP_IS_EMBEDDED(bp) else True
 BP_IS_HOLE =     lambda bp : not BP_IS_EMBEDDED(bp) and DVA_IS_EMPTY(bp['blk_dva'][0])
 BP_IS_REDACTED = lambda bp : BP_IS_EMBEDDED(bp) and BPE_GET_ETYPE(bp) == BP_EMBEDDED_TYPE_REDACTED
 
-BPE_GET_ETYPE = lambda bp : BF64_GET(bp['blk_prop'], 40, 8)
+BPE_GET_ETYPE : Callable[[gdb.Value], gdb.Value] = lambda bp : BF64_GET(bp['blk_prop'], 40, 8)
 BPE_GET_LSIZE = lambda bp : BF64_GET_SB(bp['blk_prop'], 0, 25, 0, 1)
 BPE_GET_PSIZE = lambda bp : BF64_GET_SB(bp['blk_prop'], 25, 7, 0, 1)
 
@@ -38,7 +42,7 @@ BP_GET_LSIZE = lambda bp : BPE_GET_LSIZE(bp) if BP_IS_EMBEDDED(bp) else BF64_GET
 BP_GET_PSIZE = lambda bp : 0 if BP_IS_EMBEDDED(bp) else BF64_GET_SB(bp['blk_prop'], 16, SPA_PSIZEBITS, SPA_MINBLOCKSHIFT, 1)
 
 BP_GET_COMPRESS =   lambda bp : BF64_GET(bp['blk_prop'], 32, SPA_COMPRESSBITS)
-BP_IS_EMBEDDED =    lambda bp : BF64_GET(bp['blk_prop'], 39, 1)
+BP_IS_EMBEDDED : Callable[[gdb.Value], gdb.Value] =    lambda bp : BF64_GET(bp['blk_prop'], 39, 1)
 BP_GET_CHECKSUM =   lambda bp : ZIO_CHECKSUM_OFF if BP_IS_EMBEDDED(bp) else BF64_GET(bp['blk_prop'], 40, 8)
 BP_GET_TYPE =       lambda bp : BF64_GET(bp['blk_prop'], 48, 8)
 BP_GET_LEVEL =      lambda bp : BF64_GET(bp['blk_prop'], 56, 5)
