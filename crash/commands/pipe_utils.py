@@ -160,3 +160,20 @@ class Address(PipeableCommand):
     def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
         for i in input:
             yield i.address
+
+class Array(PipeableCommand):
+    cmdName = 'array'
+    def __init__(self, arg : str = ""):
+        super().__init__()
+        try:
+            parser = argparse.ArgumentParser(prog='array')
+            # TODO allow 'count' to be omitted if input type is proper array
+            parser.add_argument('count', type=int, nargs='?')
+            self.args = parser.parse_args(gdb.string_to_argv(arg))
+        except:
+            pass
+
+    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+        for array_start in input:
+            for idx in range(self.args.count):
+                yield array_start + idx
