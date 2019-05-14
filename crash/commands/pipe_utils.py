@@ -151,3 +151,12 @@ class Echo(PipeableCommand):
             yield gdb.Value(int(o, 0))
         for o in input:
             yield o
+
+class Address(PipeableCommand):
+    cmdName = 'address'
+    def __init__(self, arg=""):
+        super().__init__()
+
+    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+        for i in input:
+            yield i.address
