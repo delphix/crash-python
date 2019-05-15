@@ -3,7 +3,7 @@
 
 from crash.commands.sdb import SDBCommand
 from crash.commands.zfs.zfs_util import parse_type
-from typing import Dict, Iterable, Type
+from typing import Dict, Iterable, Type, Union
 import gdb
 
 #
@@ -24,7 +24,7 @@ class PrettyPrinter(SDBCommand):
         raise NotImplementedError
 
     # Invoke the pretty_print function on each input, checking types as we go.
-    def call(self, input : Iterable[gdb.Value]) -> None:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         t = parse_type(self.inputType)
         for i in input:
             if i.type != t:
@@ -33,6 +33,7 @@ class PrettyPrinter(SDBCommand):
                     i.type))
 
             self.pretty_print(i)
+        return []
 
 class PrettyPrint(SDBCommand):
     cmdName = 'pp'

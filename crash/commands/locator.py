@@ -44,7 +44,7 @@ class Locator(PipeableCommand):
 
     # Dispatch to the appropriate instance function based on the type of the
     # input we receive.
-    def caller(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def caller(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         out_type = parse_type(self.outputType)
         hasInput = False
         for i in input:
@@ -93,7 +93,7 @@ class Locator(PipeableCommand):
         if not hasInput:
             yield from self.noInput()
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         # If this is a hybrid locator/pretty printer, this is where that is leveraged.
         if self.islast and isinstance(self, PrettyPrinter):
             self.pretty_print(self.caller(input))

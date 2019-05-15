@@ -149,7 +149,7 @@ class SDBCommand(object):
     # the pipeline, providing each stage with the earlier stage's outputs as
     # input.
     @staticmethod
-    def executePipeline(first_input : Iterable[gdb.Value], args : List["SDBCommand"]) -> gdb.Value:
+    def executePipeline(first_input : Iterable[gdb.Value], args : List["SDBCommand"]) -> Iterable[gdb.Value]:
         # if this stage wants its input in a certain type, insert a
         # "coerce" stage before it
         if args[-1].inputType is not None:
@@ -163,7 +163,7 @@ class SDBCommand(object):
     # Run a pipeline that ends in a non-pipeable command. This function is
     # very similar to executePipeline, but it doesn't yield any results.
     @staticmethod
-    def executePipelineTerm(first_input : Iterable[gdb.Value], args : List["SDBCommand"]) -> gdb.Value:
+    def executePipelineTerm(first_input : Iterable[gdb.Value], args : List["SDBCommand"]) -> None:
         # if the last stage wants its input in a certain type, insert a
         # "coerce" stage before it
         assert not isinstance(args[-1], PipeableCommand)
@@ -227,6 +227,6 @@ class Coerce(PipeableCommand):
 
         raise TypeError("can not coerce {} to {} {}".format(obj.type, self.type, self.auxError))
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for i in input:
             yield self.coerce(i)

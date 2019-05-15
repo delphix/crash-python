@@ -21,7 +21,7 @@ class Type(PipeableCommand):
     cmdName = 'type'
     def __init__(self, arg : str = ""):
         super().__init__()
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for o in input:
             print(o.type)
             yield o
@@ -30,7 +30,7 @@ class LineCount(PipeableCommand):
     cmdName = 'wc'
     def __init__(self, arg=""):
         super().__init__()
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         i = 0
         for o in input:
             i += 1
@@ -47,7 +47,7 @@ class Head(PipeableCommand):
         except:
             pass
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for o in input:
             if self.args.count == 0:
                 break
@@ -66,7 +66,7 @@ class Tail(PipeableCommand):
         except:
             pass
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         q : Deque[gdb.Value] = deque(maxlen=self.args.count)
         for o in input:
             q.append(o)
@@ -110,7 +110,7 @@ class Member(PipeableCommand):
         super().__init__()
         self.args = arg
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for i in input:
             yield parseMember(i, self.args)
 
@@ -120,7 +120,7 @@ class Filter(PipeableCommand):
         super().__init__()
         self.args = arg
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for i in input:
             if i.type.code == gdb.TYPE_CODE_PTR:
                 cmd = "(({}){})->{}".format(i.type, hex(i), self.args)
@@ -146,7 +146,7 @@ class Echo(PipeableCommand):
         super().__init__()
         self.arg = arg
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for o in self.arg.split():
             yield gdb.Value(int(o, 0))
         for o in input:
@@ -157,7 +157,7 @@ class Address(PipeableCommand):
     def __init__(self, arg=""):
         super().__init__()
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for i in input:
             yield i.address
 
@@ -173,7 +173,7 @@ class Array(PipeableCommand):
         except:
             pass
 
-    def call(self, input : Iterable[gdb.Value]) -> gdb.Value:
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for array_start in input:
             for idx in range(self.args.count):
                 yield array_start + idx
