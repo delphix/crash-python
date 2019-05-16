@@ -16,12 +16,13 @@ class RangeTree(PrettyPrinter):
     def __init__(self, arg=""):
         super().__init__()
 
-    def pretty_print(self, rt):
-        print("{}: range tree of {} entries, {} bytes".format(
-            rt,
-            rt['rt_root']['avl_numnodes'],
-            rt['rt_space']))
-        SDBCommand.executePipelineTerm([rt], [RangeSeg(), PrettyPrint()])
+    def pretty_print(self, rts):
+        for rt in rts:
+            print("{}: range tree of {} entries, {} bytes".format(
+                rt,
+                rt['rt_root']['avl_numnodes'],
+                rt['rt_space']))
+            SDBCommand.executePipelineTerm([rt], [RangeSeg(), PrettyPrint()])
 
 class RangeSeg(Locator, PrettyPrinter):
     cmdName = 'range_seg'

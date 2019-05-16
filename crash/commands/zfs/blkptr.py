@@ -85,18 +85,19 @@ SYNOPSIS
             int(bp['blk_cksum']['zc_word'][2]),
             int(bp['blk_cksum']['zc_word'][3])))
 
-    def pretty_print(self, bp):
-        if bp == 0:
-            print("<NULL>")
-            return
+    def pretty_print(self, bps):
+        for bp in bps:
+            if bp == 0:
+                print("<NULL>")
+                return
 
-        type = enum_lookup("enum dmu_object_type", BP_GET_TYPE(bp))
+            type = enum_lookup("enum dmu_object_type", BP_GET_TYPE(bp))
 
-        if BP_IS_HOLE(bp):
-            Blkptr.print_blkptr_hole(bp, type)
-        elif BP_IS_REDACTED(bp):
-            Blkptr.print_blkptr_redacted(bp, type)
-        elif BP_IS_EMBEDDED(bp):
-            Blkptr.print_blkptr_embedded(bp, type)
-        else:
-            Blkptr.print_blkptr_normal(bp, type)
+            if BP_IS_HOLE(bp):
+                Blkptr.print_blkptr_hole(bp, type)
+            elif BP_IS_REDACTED(bp):
+                Blkptr.print_blkptr_redacted(bp, type)
+            elif BP_IS_EMBEDDED(bp):
+                Blkptr.print_blkptr_embedded(bp, type)
+            else:
+                Blkptr.print_blkptr_normal(bp, type)

@@ -21,10 +21,11 @@ class ZfsDbgmsg(gdb.Command):
         super().__init__("zfs_dbgmsg", gdb.COMMAND_DATA)
 
     # node is a zfs_dbgmsg_t*
+    @staticmethod
     def print_msg(node : gdb.Value, arg : ZfsDbgmsgArg) -> None:
         strlen = int(node['zdm_size']) - node.type.target().sizeof
         if arg.addr:
-            print("{} ".format(hex(node)), end="")
+            print("{} ".format(hex(node)), end="") # type: ignore
         if arg.ts:
             timestamp = datetime.datetime.fromtimestamp(int(node['zdm_timestamp']))
             print("{}: ".format(timestamp.strftime('%Y-%m-%dT%H:%M:%S')), end="")

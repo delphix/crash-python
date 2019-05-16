@@ -20,7 +20,7 @@ class PrettyPrinter(SDBCommand):
         assert cls.inputType is not None
         PrettyPrinter.allPrinters[cls.inputType] = cls
         
-    def pretty_print(self, input : gdb.Value) -> None:
+    def pretty_print(self, input : Iterable[gdb.Value]) -> None:
         raise NotImplementedError
 
     # Invoke the pretty_print function on each input, checking types as we go.
@@ -32,7 +32,7 @@ class PrettyPrinter(SDBCommand):
                     self.cmdName,
                     i.type))
 
-            self.pretty_print(i)
+            self.pretty_print([i])
         return []
 
 class PrettyPrint(SDBCommand):

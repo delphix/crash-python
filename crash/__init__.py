@@ -3,9 +3,10 @@
 
 # Perform some sanity checks to ensure that we can actually work
 import gdb
+from typing import Any
 
 try:
-    x = gdb.Target
+    x : Any = gdb.Target
 except AttributeError as e:
     raise RuntimeError("the installed gdb doesn't provide gdb.Target")
 

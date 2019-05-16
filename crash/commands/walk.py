@@ -21,7 +21,7 @@ class Walker(PipeableCommand):
         assert cls.inputType is not None
         Walker.allWalkers[cls.inputType] = cls
 
-    def walk(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
+    def walk(self, input : gdb.Value) -> Iterable[gdb.Value]:
         raise NotImplementedError
 
     # Iterate over the inputs and call the walk command on each of them,

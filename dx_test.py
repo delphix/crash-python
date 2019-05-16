@@ -86,7 +86,9 @@ os.chdir(os.path.dirname(os.path.realpath(__file__)))
 print("Running mypy  ... ", end='', flush=True)
 with open('{}/mypy.out'.format(args.output), 'w') as outfile:
     try:
-        proc = subprocess.run('mypy --ignore-missing-imports crash/commands/zfs'.split(' '), stdout=outfile, stderr=subprocess.STDOUT)
+        my_env = os.environ.copy()
+        my_env['MYPYPATH'] = 'stubs'
+        proc = subprocess.run('mypy --ignore-missing-imports crash/commands/zfs'.split(' '), stdout=outfile, stderr=subprocess.STDOUT, env=my_env)
         if proc.returncode != 0:
             print("FAIL")
             failures.append('mypy')

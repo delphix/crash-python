@@ -21,7 +21,9 @@ def sizeof(name : str) -> int:
 
 def offsetof(name : str, field_name : str) -> int:
     typ = gdb.lookup_type(name)
-    return int(gdb.Value(0).cast(typ.pointer())[field_name].address)
+    val = gdb.Value(0).cast(typ.pointer())[field_name].address
+    assert val is not None
+    return int(val)
 
 
 def enum_lookup(enum_type_name, value):

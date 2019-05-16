@@ -123,9 +123,9 @@ class Filter(PipeableCommand):
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for i in input:
             if i.type.code == gdb.TYPE_CODE_PTR:
-                cmd = "(({}){})->{}".format(i.type, hex(i), self.args)
+                cmd = "(({}){})->{}".format(i.type, hex(i), self.args) # type: ignore
             else:
-                cmd = "(({}){}).{}".format(i.type, hex(i), self.args)
+                cmd = "(({}){}).{}".format(i.type, hex(i), self.args) # type: ignore
             #print(cmd)
             if (int(gdb.parse_and_eval(cmd)) != 0):
                 yield i
@@ -159,6 +159,7 @@ class Address(PipeableCommand):
 
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for i in input:
+            assert i.address is not None
             yield i.address
 
 class Array(PipeableCommand):
