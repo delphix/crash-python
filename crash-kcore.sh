@@ -15,7 +15,6 @@ export PYTHONPATH="/usr/local/lib/python3.6/site-packages:$PYTHONPATH"
 export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
 export PATH="/usr/local/bin:$PATH"
 
-GDB="/usr/local/bin/gdb"
 VMLINUX="/usr/lib/debug/boot/vmlinux-$(uname -r)"
 
 GDBINIT=$(mktemp)
@@ -69,4 +68,4 @@ x = crash.session.Session(None, None, None)
 end
 EOF
 
-$GDB -nh -x "$GDBINIT"
+gdb -nh -x "$GDBINIT"
