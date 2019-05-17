@@ -5,15 +5,9 @@ import gdb
 import inspect
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.sdb import PipeableCommand, SDBCommand
-from typing import Iterable, Dict, Callable, Type, NoReturn
+from typing import Iterable, Dict, Callable, Type, NoReturn, Any, TypeVar
 from crash.commands.zfs.zfs_util import parse_type
 from crash.commands.walk import Walk
-
-def InputHandler(typename : str):
-    def decorator(func):
-        func.input_typename_handled = typename
-        return func
-    return decorator
 
 #
 # A Locator is a command that locates objects of a given type.  Subclasses
@@ -99,3 +93,13 @@ class Locator(PipeableCommand):
             self.pretty_print(self.caller(input))
         else:
             yield from self.caller(input)
+
+T = TypeVar('T', bound=Locator)
+IH = Callable[[T, gdb.Value], Iterable[gdb.Value]]
+
+def InputHandler(typename : str) -> Callable[[IH[T]], IH[T]]:
+    def decorator(func : IH[T]) -> IH[T]:
+        func.input_typename_handled = typename #type: ignore
+        return func
+    return decorator
+

@@ -10,6 +10,7 @@ from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.walk import Walk
 from crash.commands.zfs.cast import Cast
+from typing import Iterable
 
 class DslDir():
     # dd is gdb.Value of type dsl_dir_t*
@@ -88,7 +89,8 @@ class Dbuf(Locator, PrettyPrinter):
     # dn is gdb.Value of type dnode_t*
     # need to yield gdb.Value's of type dmu_buf_impl_t*
     @InputHandler('dnode_t*')
-    def from_dnode(self, dn):
+    def from_dnode(self, dn : gdb.Value) -> Iterable[gdb.Value]:
+        assert dn['dn_dbufs'].address is not None
         for db in SDBCommand.executePipeline(
                 [dn['dn_dbufs'].address],
                 [Walk(), Cast('dmu_buf_impl_t*')]):

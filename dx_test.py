@@ -86,9 +86,7 @@ os.chdir(os.path.dirname(os.path.realpath(__file__)))
 print("Running mypy  ... ", end='', flush=True)
 with open('{}/mypy.out'.format(args.output), 'w') as outfile:
     try:
-        my_env = os.environ.copy()
-        my_env['MYPYPATH'] = 'stubs'
-        proc = subprocess.run('mypy --disallow-untyped-calls --warn-unused-ignores crash/commands/zfs'.split(' '), stdout=outfile, stderr=subprocess.STDOUT, env=my_env)
+        proc = subprocess.run('mypy crash/commands/zfs'.split(' '), stdout=outfile, stderr=subprocess.STDOUT)
         if proc.returncode != 0:
             print("FAIL")
             failures.append('mypy')

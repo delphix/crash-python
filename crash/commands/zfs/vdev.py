@@ -7,7 +7,7 @@ from crash.commands.sdb import SDBCommand
 from crash.commands.locator import Locator
 from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
-from typing import Callable, Any
+from typing import Callable, Any, Iterable
 from crash.commands.zfs.zfs_util import enum_lookup
 from crash.commands.zfs.metaslab import Metaslab
 
@@ -75,7 +75,7 @@ class Vdev(Locator, PrettyPrinter):
     # arg is gdb.Value of type spa_t*
     # need to yield gdb.Value's of type vdev_t*
     @InputHandler('spa_t*')
-    def from_spa(self, spa):
+    def from_spa(self, spa : gdb.Value) -> Iterable[gdb.Value]:
         if self.args.vdev_ids:
             # yield the requested top-level vdevs
             for id in self.args.vdev_ids:
@@ -91,10 +91,10 @@ class Vdev(Locator, PrettyPrinter):
     # arg is gdb.Value of type vdev_t*
     # need to yield gdb.Value's of type vdev_t*
     @InputHandler('vdev_t*')
-    def from_vdev(self, vdev):
+    def from_vdev(self, vdev : gdb.Value) -> Iterable[gdb.Value]:
         if self.args.vdev_ids:
             raise TypeError('when providing a vdev, specific child vdevs can not be requested')
         yield vdev
-        for cid in range(0, vdev['vdev_children']):
+        for cid in range(0, int(vdev['vdev_children'])):
             cvd = vdev['vdev_child'][cid]
             yield from self.from_vdev(cvd)

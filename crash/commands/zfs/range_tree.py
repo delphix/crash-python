@@ -9,6 +9,7 @@ from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter, PrettyPrint
 from crash.commands.zfs.avl import Avl
 from crash.commands.zfs.cast import Cast
+from typing import Iterable
 
 class RangeTree(PrettyPrinter):
     cmdName = 'range_tree'
@@ -43,6 +44,7 @@ class RangeSeg(Locator, PrettyPrinter):
     # arg is gdb.Value of type range_tree_t*
     # need to yield gdb.Value's of type range_seg_t*
     @InputHandler('range_tree_t *')
-    def from_range_tree(self, rt):
+    def from_range_tree(self, rt : gdb.Value) -> Iterable[gdb.Value]:
+        assert rt['rt_root'].address is not None
         yield from SDBCommand.executePipeline([rt['rt_root'].address],
             [Avl(), Cast('range_seg_t *')])

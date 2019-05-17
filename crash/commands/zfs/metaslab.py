@@ -8,6 +8,7 @@ from crash.commands.locator import Locator
 from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.zfs_util import print_histogram, nicenum, sizeof
+from typing import Iterable
 
 class Metaslab(Locator, PrettyPrinter):
     cmdName = 'metaslab'
@@ -126,7 +127,7 @@ class Metaslab(Locator, PrettyPrinter):
 #            yield from self.metaslab_from_vdev(vd)
 
     @InputHandler('vdev_t*')
-    def from_vdev(self, vdev):
+    def from_vdev(self, vdev : gdb.Value) -> Iterable[gdb.Value]:
         if self.args.metaslab_ids:
             # yield the requested metaslabs
             for id in self.args.metaslab_ids:
@@ -137,6 +138,6 @@ class Metaslab(Locator, PrettyPrinter):
                         vdev['vdev_id']))
                 yield vdev['vdev_ms'][id]
         else:
-            for m in range(0, vdev['vdev_ms_count']):
+            for m in range(0, int(vdev['vdev_ms_count'])):
                 msp = vdev['vdev_ms'][m]
                 yield msp

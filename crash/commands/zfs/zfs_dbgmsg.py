@@ -22,7 +22,7 @@ class ZfsDbgmsg(gdb.Command):
 
     # node is a zfs_dbgmsg_t*
     @staticmethod
-    def print_msg(node : gdb.Value, ts = False, addr = False) -> None:
+    def print_msg(node : gdb.Value, ts : bool = False, addr : bool = False) -> None:
         strlen = int(node['zdm_size']) - node.type.target().sizeof
         if addr:
             print("{} ".format(hex(node)), end="") # type: ignore

@@ -10,7 +10,7 @@ class Avl(Walker):
 
     cmdName = 'avl'
     inputType = 'avl_tree_t *'
-    def __init__(self, arg=""):
+    def __init__(self, arg="") -> None:
         super().__init__()
 
     def walk(self, tree):
