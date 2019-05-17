@@ -11,7 +11,7 @@ class List(Walker):
 
     cmdName = 'list'
     inputType = 'list_t *'
-    def __init__(self, arg=""):
+    def __init__(self, arg="") -> None:
         super().__init__()
 
     def walk(self, list):
@@ -27,7 +27,7 @@ class LinuxList(Walker):
 
     cmdName = 'linux_list'
     inputType = 'struct list_head *'
-    def __init__(self, arg=""):
+    def __init__(self, arg="") -> None:
         super().__init__()
         parser = argparse.ArgumentParser(description = "walk a linux list")
         parser.add_argument('offset', default=0, type=int, nargs='?', help='offset of list_head in structure')

@@ -8,7 +8,7 @@ from crash.commands.zfs.zfs_util import symbol_address
 class Dbufs(gdb.Command):
     """ list dbufs """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('dbuf_list', gdb.COMMAND_DATA)
 
 

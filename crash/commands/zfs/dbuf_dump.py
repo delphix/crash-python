@@ -7,7 +7,7 @@ import argparse
 class DBuf(gdb.Command):
     """ dbuf fields"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(DBuf, self).__init__('dbuf_dump', gdb.COMMAND_DATA)
 
     def invoke(self, argstr, from_tty):

@@ -5,7 +5,7 @@ import gdb
 import inspect
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.sdb import PipeableCommand, SDBCommand
-from typing import Iterable, Dict, Callable, Type
+from typing import Iterable, Dict, Callable, Type, NoReturn
 from crash.commands.zfs.zfs_util import parse_type
 from crash.commands.walk import Walk
 
@@ -38,7 +38,7 @@ class Locator(PipeableCommand):
         self.inputType = None
 
     # subclass may override this
-    def noInput(self):
+    def noInput(self) -> Iterable[gdb.Value]:
         raise TypeError('command "{}" requires an input'.format(
             self.cmdName))
 

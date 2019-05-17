@@ -11,7 +11,7 @@ from crash.commands.pipe_utils import LineCount
 from crash.commands.zfs.cast import Cast
 
 class Kmastat(gdb.Command):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('kmastat', gdb.COMMAND_DATA)
         parser = argparse.ArgumentParser(description='Print information on each kmem cache')
         parser.add_argument('-k', action='store_true', help='show memory in units of KiB')

@@ -10,7 +10,7 @@ from collections import defaultdict
 class DBufStats(gdb.Command):
     """ dbuf stats """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(DBufStats, self).__init__('dbuf_stats', gdb.COMMAND_DATA)
 
     def count_chain(db, chain_depth):

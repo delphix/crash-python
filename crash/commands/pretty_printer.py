@@ -25,6 +25,7 @@ class PrettyPrinter(SDBCommand):
 
     # Invoke the pretty_print function on each input, checking types as we go.
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
+        assert self.inputType is not None
         t = parse_type(self.inputType)
         for i in input:
             if i.type != t:

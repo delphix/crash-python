@@ -17,16 +17,16 @@ class ZfsDbgmsgArg():
         self.addr = addr
 
 class ZfsDbgmsg(gdb.Command):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("zfs_dbgmsg", gdb.COMMAND_DATA)
 
     # node is a zfs_dbgmsg_t*
     @staticmethod
-    def print_msg(node : gdb.Value, arg : ZfsDbgmsgArg) -> None:
+    def print_msg(node : gdb.Value, ts = False, addr = False) -> None:
         strlen = int(node['zdm_size']) - node.type.target().sizeof
-        if arg.addr:
+        if addr:
             print("{} ".format(hex(node)), end="") # type: ignore
-        if arg.ts:
+        if ts:
             timestamp = datetime.datetime.fromtimestamp(int(node['zdm_timestamp']))
             print("{}: ".format(timestamp.strftime('%Y-%m-%dT%H:%M:%S')), end="")
 
@@ -48,10 +48,11 @@ class ZfsDbgmsg(gdb.Command):
                 return
             verbosity += 1
 
-        zda = ZfsDbgmsgArg(verbosity >= 1, verbosity >= 2)
         proc_list = symbol_address("zfs_dbgmsgs")
+        assert proc_list is not None
         list_addr = proc_list['pl_list'].address
+        assert list_addr is not None
         for node in SDBCommand.executePipeline([list_addr], [List(), Cast('zfs_dbgmsg_t *')]):
-            ZfsDbgmsg.print_msg(node, zda)
+            ZfsDbgmsg.print_msg(node, verbosity >=1, verbosity >= 2)
 
 ZfsDbgmsg()

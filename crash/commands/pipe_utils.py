@@ -8,7 +8,7 @@ from typing import Iterable,Deque
 import argparse
 
 class Pipe(gdb.Command):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('pipe', gdb.COMMAND_DATA)
 
     def invoke(self, argstr, from_tty):
@@ -19,7 +19,7 @@ Pipe()
 
 class Type(PipeableCommand):
     cmdName = 'type'
-    def __init__(self, arg : str = ""):
+    def __init__(self, arg = "") -> None:
         super().__init__()
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for o in input:
@@ -28,7 +28,7 @@ class Type(PipeableCommand):
 
 class LineCount(PipeableCommand):
     cmdName = 'wc'
-    def __init__(self, arg=""):
+    def __init__(self, arg="") -> None:
         super().__init__()
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         i = 0
@@ -74,7 +74,7 @@ class Tail(PipeableCommand):
             yield o
 
 import re
-def parseMember(value, memberString, strictChecking=False):
+def parseMember(value : gdb.Value, memberString : str, strictChecking = False) -> gdb.Value:
     regexp = re.compile('(\.|->|\[)([a-zA-Z0-9_\]]*)(.*)')
     while len(memberString) > 0:
         match = regexp.match(memberString)

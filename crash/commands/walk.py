@@ -12,7 +12,7 @@ from typing import Iterable, Dict, Type
 #
 class Walker(PipeableCommand):
     allWalkers : Dict[str, Type["Walker"]] = {}
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     # When a subclass is created, register it
@@ -27,6 +27,7 @@ class Walker(PipeableCommand):
     # Iterate over the inputs and call the walk command on each of them,
     # verifying the types as we go.
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
+        assert self.inputType is not None
         t = parse_type(self.inputType)
         for i in input:
             if i.type != t:
@@ -40,10 +41,10 @@ class Walker(PipeableCommand):
 # walker based on the type of the input data.
 class Walk(PipeableCommand):
     cmdName = 'walk'
-    def __init__(self, arg=""):
+    def __init__(self, arg="") -> None:
         super().__init__()
 
-    def call(self, input):
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         baked = [ (parse_type(k), c) for k, c in Walker.allWalkers.items() ]
         hasInput = False
         for i in input:

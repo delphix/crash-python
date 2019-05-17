@@ -10,7 +10,7 @@ from crash.commands.zfs.zfs_util import *
 # TODO: nicenum print the size counters
 #
 class Arc(gdb.Command):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("arc", gdb.COMMAND_DATA)
 
     def print_arc(self, addr):

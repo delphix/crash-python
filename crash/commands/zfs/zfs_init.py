@@ -20,29 +20,29 @@ BP_EMBEDDED_TYPE_MOOCH_BYTESWAP = 1
 BP_EMBEDDED_TYPE_REDACTED = 2
 ZIO_CHECKSUM_OFF = 2
 
-P2PHASE =     lambda x, align : ((x) & ((align) - 1))
-BF64_DECODE = lambda x, low, len : P2PHASE(x >> low, 1 << len)
-BF64_GET =    lambda x, low, len : BF64_DECODE(x, low, len)
-BF64_GET_SB = lambda x, low, len, shift, bias : (BF64_GET(x, low, len) + bias) << shift
+P2PHASE : Callable[[gdb.Value, int], gdb.Value]			= lambda x, align : ((x) & ((align) - 1))
+BF64_DECODE : Callable[[gdb.Value, int, int], int]	= lambda x, low, len : int(P2PHASE(x >> low, 1 << len))
+BF64_GET : Callable[[gdb.Value, int, int], int]		= lambda x, low, len : BF64_DECODE(x, low, len)
+BF64_GET_SB : Callable[[gdb.Value, int, int, int, int], int]	= lambda x, low, len, shift, bias : (BF64_GET(x, low, len) + bias) << shift
 
-DVA_GET_ASIZE =  lambda dva : BF64_GET_SB(dva['dva_word'][0], 0, SPA_ASIZEBITS, SPA_MINBLOCKSHIFT, 0)
-DVA_GET_VDEV =   lambda dva : BF64_GET(dva['dva_word'][0], 32, SPA_VDEVBITS)
-DVA_GET_OFFSET = lambda dva : BF64_GET_SB(dva['dva_word'][1], 0, 63, SPA_MINBLOCKSHIFT, 0)
-DVA_IS_EMPTY =   lambda dva : dva['dva_word'][0] == 0 and dva['dva_word'][1] == 0
+DVA_GET_ASIZE : Callable[[gdb.Value], int]	= lambda dva : BF64_GET_SB(dva['dva_word'][0], 0, SPA_ASIZEBITS, SPA_MINBLOCKSHIFT, 0)
+DVA_GET_VDEV : Callable[[gdb.Value], int]		= lambda dva : BF64_GET(dva['dva_word'][0], 32, SPA_VDEVBITS)
+DVA_GET_OFFSET : Callable[[gdb.Value], int]	= lambda dva : BF64_GET_SB(dva['dva_word'][1], 0, 63, SPA_MINBLOCKSHIFT, 0)
+DVA_IS_EMPTY : Callable[[gdb.Value], bool]		= lambda dva : dva['dva_word'][0] == 0 and dva['dva_word'][1] == 0
 
-BP_IS_GANG =     lambda bp : False if BP_IS_EMBEDDED(bp) else True
-BP_IS_HOLE =     lambda bp : not BP_IS_EMBEDDED(bp) and DVA_IS_EMPTY(bp['blk_dva'][0])
-BP_IS_REDACTED = lambda bp : BP_IS_EMBEDDED(bp) and BPE_GET_ETYPE(bp) == BP_EMBEDDED_TYPE_REDACTED
+BP_IS_GANG : Callable[[gdb.Value], bool]	= lambda bp : False if BP_IS_EMBEDDED(bp) else True
+BP_IS_HOLE : Callable[[gdb.Value], bool]	= lambda bp : not BP_IS_EMBEDDED(bp) and DVA_IS_EMPTY(bp['blk_dva'][0])
+BP_IS_REDACTED : Callable[[gdb.Value], bool]	= lambda bp : BP_IS_EMBEDDED(bp) and BPE_GET_ETYPE(bp) == BP_EMBEDDED_TYPE_REDACTED
 
-BPE_GET_ETYPE : Callable[[gdb.Value], gdb.Value] = lambda bp : BF64_GET(bp['blk_prop'], 40, 8)
-BPE_GET_LSIZE = lambda bp : BF64_GET_SB(bp['blk_prop'], 0, 25, 0, 1)
+BPE_GET_ETYPE : Callable[[gdb.Value], int]	= lambda bp : BF64_GET(bp['blk_prop'], 40, 8)
+BPE_GET_LSIZE : Callable[[gdb.Value], int]	= lambda bp : BF64_GET_SB(bp['blk_prop'], 0, 25, 0, 1)
 BPE_GET_PSIZE = lambda bp : BF64_GET_SB(bp['blk_prop'], 25, 7, 0, 1)
 
 BP_GET_LSIZE = lambda bp : BPE_GET_LSIZE(bp) if BP_IS_EMBEDDED(bp) else BF64_GET_SB(bp['blk_prop'], 0, SPA_LSIZEBITS, SPA_MINBLOCKSHIFT, 1)
 BP_GET_PSIZE = lambda bp : 0 if BP_IS_EMBEDDED(bp) else BF64_GET_SB(bp['blk_prop'], 16, SPA_PSIZEBITS, SPA_MINBLOCKSHIFT, 1)
 
 BP_GET_COMPRESS =   lambda bp : BF64_GET(bp['blk_prop'], 32, SPA_COMPRESSBITS)
-BP_IS_EMBEDDED : Callable[[gdb.Value], gdb.Value] =    lambda bp : BF64_GET(bp['blk_prop'], 39, 1)
+BP_IS_EMBEDDED : Callable[[gdb.Value], bool] =    lambda bp : bool(BF64_GET(bp['blk_prop'], 39, 1))
 BP_GET_CHECKSUM =   lambda bp : ZIO_CHECKSUM_OFF if BP_IS_EMBEDDED(bp) else BF64_GET(bp['blk_prop'], 40, 8)
 BP_GET_TYPE =       lambda bp : BF64_GET(bp['blk_prop'], 48, 8)
 BP_GET_LEVEL =      lambda bp : BF64_GET(bp['blk_prop'], 56, 5)

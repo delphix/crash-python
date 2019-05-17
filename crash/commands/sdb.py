@@ -23,8 +23,9 @@ class SDBCommand(object):
     # registered as "real" gdb commands.  Typically all concrete
     # subclasses would do this
     cmdName : Optional[Union[List[str],str]] = None
+    gdbCmdName : Optional[str] = None
 
-    def __init__(self, args=''):
+    def __init__(self, args = '') -> None:
         self.islast = False
 
     # When a subclass is created, if it has a 'cmdName' property, then
@@ -53,9 +54,9 @@ class SDBCommand(object):
         # where the constructor is also the register function.
         #
         class gdbCmd(gdb.Command):
-            def __init__(self):
+            def __init__(self) -> None:
                 gdbCmdname = name
-                if hasattr(c, "gdbCmdName"):
+                if c.gdbCmdName is not None:
                     gdbCmdname = c.gdbCmdName
                 super().__init__(gdbCmdname, gdb.COMMAND_DATA)
             def invoke(self, argstr : str, from_tty : bool) -> None:
@@ -180,7 +181,7 @@ class SDBCommand(object):
         raise NotImplementedError
 
     # called if this is the last thing in the pipeline
-    def setIsLast(self):
+    def setIsLast(self) -> None:
         self.islast = True
 
 #
@@ -188,7 +189,7 @@ class SDBCommand(object):
 # generator, for performance reasons.
 #
 class PipeableCommand(SDBCommand):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         rv = self.call([])
         assert (rv is not None and rv.__iter__ is not None), "{}.call() does not return an iterable".format(type(self).__name__)
@@ -201,7 +202,7 @@ class PipeableCommand(SDBCommand):
 #
 class Coerce(PipeableCommand):
     cmdName = 'coerce'
-    def __init__(self, arg : str = "void *", auxError : str = ''):
+    def __init__(self, arg : str = "void *", auxError : str = '')  -> None:
         super().__init__()
         self.auxError = auxError
         self.type = parse_type(arg)

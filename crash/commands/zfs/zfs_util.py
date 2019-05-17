@@ -4,14 +4,14 @@
 import gdb
 import argparse
 import os.path
-from typing import Callable, Any
+from typing import Callable, Any, Optional
 from os.path import commonprefix
 
-def symbol_address(symbol):
+def symbol_address(symbol : str) -> Optional[gdb.Value]:
     sym = gdb.lookup_global_symbol(symbol)
     if sym == None:
         sym = gdb.lookup_symbol(symbol)[0]
-    if sym != None:
+    if sym is not None:
         return sym.value().address
     return None
 
@@ -33,7 +33,7 @@ def enum_lookup(enum_type_name, value):
     prefix = os.path.commonprefix([ f.name for f in fields ])
     return fields[value].name[prefix.rfind('_')+1:]
 
-def parse_type(typestr):
+def parse_type(typestr : str) -> gdb.Type:
     typestr = typestr.strip()
     val = None
     ptr_count = 0
