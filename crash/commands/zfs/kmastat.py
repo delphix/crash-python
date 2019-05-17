@@ -8,7 +8,7 @@ from crash.commands.zfs.list import LinuxList
 from crash.commands.zfs.zfs_util import offsetof,symbol_address
 from crash.commands.sdb import SDBCommand
 from crash.commands.pipe_utils import LineCount
-from crash.commands.zfs.cast import Cast
+from crash.commands.cast import Cast
 
 class Kmastat(gdb.Command):
     def __init__(self) -> None:

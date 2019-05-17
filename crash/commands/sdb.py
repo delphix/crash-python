@@ -25,7 +25,7 @@ class SDBCommand(object):
     cmdName : Optional[Union[List[str],str]] = None
     gdbCmdName : Optional[str] = None
 
-    def __init__(self, args = '') -> None:
+    def __init__(self, args : str = '') -> None:
         self.islast = False
 
     # When a subclass is created, if it has a 'cmdName' property, then
@@ -177,7 +177,7 @@ class SDBCommand(object):
         args[-1].call(this_input)
 
     # subclass must override this, typically with a generator, i.e. it must use `yield`
-    def call(self, input : Iterable[gdb.Value]):
+    def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         raise NotImplementedError
 
     # called if this is the last thing in the pipeline

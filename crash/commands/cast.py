@@ -11,7 +11,7 @@ class Cast(PipeableCommand):
     """ walk list """
 
     cmdName = 'cast'
-    def __init__(self, arg="") -> None:
+    def __init__(self, arg : str = "") -> None:
         super().__init__()
 
         try:

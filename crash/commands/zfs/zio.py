@@ -7,7 +7,7 @@ from crash.commands.walk import Walker
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands import CrashCommandParser
 from crash.commands.zfs.list import List
-from crash.commands.zfs.cast import Cast
+from crash.commands.cast import Cast
 
 def _zio_stage(zio):
     stage = str(zio['io_stage'])

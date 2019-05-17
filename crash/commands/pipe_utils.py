@@ -19,7 +19,7 @@ Pipe()
 
 class Type(PipeableCommand):
     cmdName = 'type'
-    def __init__(self, arg = "") -> None:
+    def __init__(self, arg : str = "") -> None:
         super().__init__()
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         for o in input:
@@ -28,7 +28,7 @@ class Type(PipeableCommand):
 
 class LineCount(PipeableCommand):
     cmdName = 'wc'
-    def __init__(self, arg="") -> None:
+    def __init__(self, arg : str = "") -> None:
         super().__init__()
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
         i = 0
@@ -74,7 +74,7 @@ class Tail(PipeableCommand):
             yield o
 
 import re
-def parseMember(value : gdb.Value, memberString : str, strictChecking = False) -> gdb.Value:
+def parseMember(value : gdb.Value, memberString : str, strictChecking : bool = False) -> gdb.Value:
     regexp = re.compile('(\.|->|\[)([a-zA-Z0-9_\]]*)(.*)')
     while len(memberString) > 0:
         match = regexp.match(memberString)

@@ -5,7 +5,7 @@ import gdb
 from typing import Callable, Any
 from crash.commands.zfs.zfs_util import symbol_address
 from crash.commands.zfs.list import List
-from crash.commands.zfs.cast import Cast
+from crash.commands.cast import Cast
 from crash.commands.sdb import SDBCommand
 import datetime,getopt
 
@@ -32,7 +32,7 @@ class ZfsDbgmsg(gdb.Command):
 
         print("{}".format(node['zdm_msg'].string(encoding='utf-8', length=strlen)))
 
-    def invoke(self, arg : str, from_tty : Any) -> None:
+    def invoke(self, arg : str, from_tty : bool) -> None:
         print(arg)
         optlist, args = getopt.getopt(arg.split(), 'v')
         verbosity = 0

@@ -7,7 +7,7 @@ from crash.commands.sdb import SDBCommand
 from crash.commands.locator import Locator
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.zfs.avl import Avl
-from crash.commands.zfs.cast import Cast
+from crash.commands.cast import Cast
 from crash.commands.zfs.vdev import Vdev
 from crash.commands.zfs.metaslab import Metaslab
 from crash.commands.zfs.zfs_util import symbol_address

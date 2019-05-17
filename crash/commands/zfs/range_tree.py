@@ -8,7 +8,7 @@ from crash.commands.locator import Locator
 from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter, PrettyPrint
 from crash.commands.zfs.avl import Avl
-from crash.commands.zfs.cast import Cast
+from crash.commands.cast import Cast
 from typing import Iterable
 
 class RangeTree(PrettyPrinter):

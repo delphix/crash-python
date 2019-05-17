@@ -9,7 +9,7 @@ from crash.commands.locator import Locator
 from crash.commands.locator import InputHandler
 from crash.commands.pretty_printer import PrettyPrinter
 from crash.commands.walk import Walk
-from crash.commands.zfs.cast import Cast
+from crash.commands.cast import Cast
 from typing import Iterable
 
 class DslDir():

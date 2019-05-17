@@ -1,4 +1,5 @@
 from typing import Optional,Tuple,Any,Union,SupportsInt,List
+import abc
 
 COMMAND_DATA : int
 SYMBOL_UNDEF_DOMAIN : int
@@ -133,4 +134,6 @@ class LazyString():
 
 class Command():
     def __init__(self, name : str, data : int) -> None: ...
+    @abc.abstractmethod
+    def invoke(self, argument : str, from_tty : bool) -> None: ...
     ...

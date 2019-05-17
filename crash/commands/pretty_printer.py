@@ -41,7 +41,7 @@ class PrettyPrint(SDBCommand):
     def __init__(self, arg=""):
         super().__init__()
 
-    def call(self, input : Iterable[gdb.Value]):
+    def call(self, input : Iterable[gdb.Value]) -> None: # type: ignore
         baked = [ (parse_type(t), c) for t, c in PrettyPrinter.allPrinters.items() ]
         hasInput = False
         for i in input:

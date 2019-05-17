@@ -41,7 +41,7 @@ class Walker(PipeableCommand):
 # walker based on the type of the input data.
 class Walk(PipeableCommand):
     cmdName = 'walk'
-    def __init__(self, arg="") -> None:
+    def __init__(self, arg : str = "") -> None:
         super().__init__()
 
     def call(self, input : Iterable[gdb.Value]) -> Iterable[gdb.Value]:
