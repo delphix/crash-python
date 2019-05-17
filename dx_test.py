@@ -88,7 +88,7 @@ with open('{}/mypy.out'.format(args.output), 'w') as outfile:
     try:
         my_env = os.environ.copy()
         my_env['MYPYPATH'] = 'stubs'
-        proc = subprocess.run('mypy --ignore-missing-imports crash/commands/zfs'.split(' '), stdout=outfile, stderr=subprocess.STDOUT, env=my_env)
+        proc = subprocess.run('mypy crash/commands/zfs'.split(' '), stdout=outfile, stderr=subprocess.STDOUT, env=my_env)
         if proc.returncode != 0:
             print("FAIL")
             failures.append('mypy')
