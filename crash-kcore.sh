@@ -20,11 +20,6 @@ VMLINUX="/usr/lib/debug/boot/vmlinux-$(uname -r)"
 GDBINIT=$(mktemp)
 trap "rm '$GDBINIT'" EXIT
 
-STEXT_KALLSYMS=$(awk '$3 == "_stext" { print $1 }' /proc/kallsyms)
-STEXT_VMLINUX=$(nm "$VMLINUX" | awk '$3 == "_stext" { print $1 }')
-
-OFFSET=$(python -c "print(int('$STEXT_KALLSYMS', 16) - int('$STEXT_VMLINUX', 16))")
-
 pushd "$TOP" >/dev/null
 rm -rf ./build/lib/crash
 python3 setup.py build >/dev/null
@@ -45,26 +40,24 @@ popd >/dev/null
 find /lib/modules/$(uname -r)/kernel/zfs -name '*.ko' -exec mv {} {}.orig \;
 
 cat <<EOF >"$GDBINIT"
-set stack-cache off
-set code-cache off
-set dcache size 1
-set dcache line-size 2
-set non-stop on
 
 set python print-stack full
 set height 0
 set print pretty on
 
-add-symbol-file $VMLINUX -o $OFFSET
-target core /proc/kcore
-
 python
 sys.path.insert(0, '$TOP/build/lib')
+from kcore.target import Target
+target = Target("$VMLINUX", debug=False)
 end
+
+target drgn /proc/kcore
 
 python
 import crash.session
 x = crash.session.Session(None, None, None)
+target.unregister()
+del target
 end
 EOF
 
