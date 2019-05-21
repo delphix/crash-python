@@ -306,15 +306,21 @@ class CrashKernel(CrashBaseClass):
             modfname = "{}.ko".format(modname)
             found = False
             for path in self.module_path:
-                modpath = self.find_module_file(modfname, path)
-                if not modpath:
+                modpaths = self.find_module_file(modfname, path)
+                if not modpaths:
                     continue
 
-                try:
-                    self.check_module_version(modpath, module)
-                except ModinfoMismatchError as e:
-                    if verbose:
-                        print(str(e))
+                found_path = None
+                for modpath in modpaths:
+                    try:
+                        self.check_module_version(modpath, module)
+                        found_path = modpath
+                        break
+                    except ModinfoMismatchError as e:
+                        if verbose:
+                            print(str(e))
+                        continue
+                if found_path is None:
                     continue
 
                 found = True
@@ -325,7 +331,7 @@ class CrashKernel(CrashBaseClass):
                     addr = int(module['core_layout']['base'])
 
                 if debug:
-                    print("Loading {} at {:#x}".format(modpath, addr))
+                    print("Loading {} at {:#x}".format(found_path, addr))
                 elif verbose:
                     print("Loading {} at {:#x}".format(modname, addr))
                 else:
@@ -341,7 +347,7 @@ class CrashKernel(CrashBaseClass):
 
                 try:
                     result = gdb.execute("add-symbol-file {} {:#x} {}"
-                                            .format(modpath, addr, sections),
+                                            .format(found_path, addr, sections),
                                          to_string=True)
                 except gdb.error as e:
                     raise CrashKernelError("Error while loading module `{}': {}"
@@ -349,9 +355,9 @@ class CrashKernel(CrashBaseClass):
                 if debug:
                     print(result)
 
-                objfile = gdb.lookup_objfile(modpath)
+                objfile = gdb.lookup_objfile(found_path)
                 if not objfile.has_symbols():
-                    self.load_module_debuginfo(objfile, modpath, verbose)
+                    self.load_module_debuginfo(objfile, found_path, verbose)
                 elif debug:
                     print(" + has debug symbols")
 
@@ -384,7 +390,10 @@ class CrashKernel(CrashBaseClass):
             for root, dirs, files in os.walk(path):
                 for filename in files:
                     nname = filename.replace('-', '_')
-                    self.findmap[path][nname] = os.path.join(root, filename)
+                    try:
+                        self.findmap[path][nname] += [os.path.join(root, filename)]
+                    except KeyError:
+                        self.findmap[path][nname] = [os.path.join(root, filename)]
         try:
             nname = name.replace('-', '_')
             return self.findmap[path][nname]
@@ -423,8 +432,8 @@ class CrashKernel(CrashBaseClass):
             if self.try_load_debuginfo(objfile, filepath, verbose):
                 break
 
-            filepath = self.find_module_file(filename, path)
-            if filepath and self.try_load_debuginfo(objfile, filepath, verbose):
+            filepaths = self.find_module_file(filename, path)
+            if filepaths and self.try_load_debuginfo(objfile, filepath[-1], verbose):
                 break
 
         if not objfile.has_symbols():
