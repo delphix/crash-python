@@ -6,6 +6,7 @@ import sys
 
 from crash.infra import autoload_submodules
 from crash.kernel import CrashKernel as kernel, CrashKernelError
+from crash.infra.callback import finish_events
 
 class Session(object):
     """
@@ -43,6 +44,7 @@ class Session(object):
         try:
             self.kernel.setup_tasks()
             self.kernel.load_modules(verbose=False)
+            finish_events()
         except CrashKernelError as e:
             print(str(e))
             print("Further debugging may not be possible.")

@@ -5,6 +5,23 @@ import gdb
 import traceback
 import sys
 
+objfile_events = []
+
+def finish_events():
+    global objfile_events
+    for event_class in objfile_events:
+        if event_class.completed:
+            raise CallbackCompleted(event_class)
+
+        result = event_class.check_ready()
+        if not (result is None or result is False):
+            completed = event_class.callback(result)
+            if completed is True or completed is None:
+                event_class.completed = True
+        if not event_class.completed:
+            gdb.events.new_objfile.connect(event_class._new_objfile_callback)
+    objfile_events = []
+
 class CallbackCompleted(RuntimeError):
     """The callback has already been completed and is no longer valid"""
     def __init__(self, callback_obj):
@@ -26,6 +43,7 @@ class ObjfileEventCallback(object):
     def __init__(self):
         self.completed = True
         completed = False
+        global objfile_events
 
         self.setup_symbol_cache_flush_callback()
 
@@ -39,7 +57,7 @@ class ObjfileEventCallback(object):
 
         if completed is False:
             self.completed = False
-            gdb.events.new_objfile.connect(self._new_objfile_callback)
+            objfile_events.append(self)
 
     def complete(self):
         if not self.completed:
