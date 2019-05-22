@@ -3,7 +3,7 @@
 
 export PYTHONPATH="/usr/local/lib/python3.6/site-packages:$PYTHONPATH"
 export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
-export PATH="/opt/gdb-python/bin:$PATH"
+export PATH="/opt/gdb-python/bin:/usr/local/bin:$PATH"
 
 usage() {
 cat <<END >&2
