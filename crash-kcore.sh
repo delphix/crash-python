@@ -13,7 +13,7 @@ fi
 
 export PYTHONPATH="/usr/local/lib/python3.6/site-packages:$PYTHONPATH"
 export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
-export PATH="/usr/local/bin:$PATH"
+export PATH="/opt/gdb-python/bin:$PATH"
 
 VMLINUX="/usr/lib/debug/boot/vmlinux-$(uname -r)"
 
