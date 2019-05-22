@@ -47,28 +47,16 @@ class Target(gdb.Target):
         ctx = self.kdump.get_addrxlat_ctx()
         ctx.cb_sym = SymbolCallback(ctx)
 
+        #
+        # We save the base_offset in a class variable so it can
+        # be queried when adding the symbols from vmlinux.
+        #
         KERNELOFFSET = "linux.vmcoreinfo.lines.KERNELOFFSET"
         try:
             attr = self.kdump.attr.get(KERNELOFFSET, "0")
             self.base_offset = int(attr, base=16)
         except Exception as e:
             self.base_offset = 0
-
-        vmlinux = gdb.objfiles()[0].filename
-
-
-        # Load the kernel at the relocated address
-        # Unfortunately, the percpu section has an offset of 0 and
-        # ends up getting placed at the offset base.  This is easy
-        # enough to handle in the percpu code.
-        result = gdb.execute("add-symbol-file {} -o {:#x}"
-                             .format(vmlinux, self.base_offset),
-                             to_string=True)
-        if self.debug:
-            print(result)
-
-        # Clear out the old symbol cache
-        gdb.execute("file {}".format(vmlinux))
 
     def close(self):
         try:

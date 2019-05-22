@@ -134,14 +134,24 @@ set prompt sdb>
 set height 0
 set print pretty on
 
-file "$KERNEL"
-
 python
 from kdump.target import Target
 target = Target(debug=False)
 end
 
 target kdumpfile $VMCORE
+
+python
+#
+# Now that we've opened the kdump target above we can
+# query the KASLR offset use it to load vmlinux correctly.
+#
+gdb.execute("add-symbol-file {} -o {:#x}"
+            .format("$KERNEL", target.base_offset),
+            to_string=True)
+end
+
+file $KERNEL
 
 python
 import sys
