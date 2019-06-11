@@ -38,3 +38,20 @@ class LinuxList(Walker):
         while node != llist:
             yield gdb.Value(int(node) - self.args.offset).cast(gdb.lookup_type('void').pointer())
             node = node['next']
+
+class LinuxHList(Walker):
+    """ walk linux hlist_head """
+
+    cmdName = 'linux_hlist'
+    inputType = 'struct hlist_head *'
+    def __init__(self, arg="") -> None:
+        super().__init__()
+        parser = argparse.ArgumentParser(description = "walk a linux hlist")
+        parser.add_argument('offset', default=0, type=int, nargs='?', help='offset of list_head in structure')
+        self.args = parser.parse_args(gdb.string_to_argv(arg))
+
+    def walk(self, llist):
+        node = llist['first']
+        while node != 0:
+            yield gdb.Value(int(node) - self.args.offset).cast(gdb.lookup_type('void').pointer())
+            node = node['next']
