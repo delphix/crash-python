@@ -491,7 +491,7 @@ class CrashKernel(CrashBaseClass):
 
             self.arch.setup_thread_info(thread)
 
-            if not active:
+            if not active and self.target.shortname == 'drgn':
                 self.arch.fetch_register_scheduled_inactive(thread, -1)
 
             ltask.attach_thread(thread)
