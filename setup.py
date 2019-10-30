@@ -14,6 +14,11 @@ setup(
     },
     python_requires='>=3.4',
 
+    scripts = [
+        'crash.sh',
+        'crash-kcore.sh',
+    ],
+
     install_requires = [ 'pyelftools' ],
 
     author = "Jeff Mahoney",

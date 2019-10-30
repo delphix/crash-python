@@ -330,9 +330,8 @@ class CrashKernel(CrashBaseClass):
                 else:
                     addr = int(module['core_layout']['base'])
 
-                if debug:
-                    print("Loading {} at {:#x}".format(found_path, addr))
-                elif verbose:
+                print("Loading {} at {:#x}".format(found_path, addr))
+                if verbose:
                     print("Loading {} at {:#x}".format(modname, addr))
                 else:
                     print(".", end='')
