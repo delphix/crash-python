@@ -265,11 +265,48 @@ class CrashKernel(CrashBaseClass):
         out = []
         for sec in range(0, attrs['nsections']):
             attr = attrs['attrs'][sec]
-            name = attr['name'].string()
+
+            #
+            # Before kernel version 5.8 looked like this:
+            # ```
+            # struct module_sect_attr {
+            #         struct module_attribute mattr;
+            #         char *name;
+            #         unsigned long address;
+            # };
+            # ```
+            #
+            # From 5.8 and later the `name` field was moved
+            # as a generic binary attribute in `battr`:
+            # ```
+            # struct module_sect_attr {
+            #        struct bin_attribute battr;
+            #        unsigned long address;
+            #};
+            # ```
+            #
+            # Unfortunately gdb.Values are not real Python
+            # dictionaries, so in order to chech which
+            # version of the `module_sect_attr` we are
+            # looking at we do the following looping dance
+            # to avoid raising and catching obscure GDB
+            # exceptions.
+            #
+            name = None
+            for field in attr.type.fields():
+                if field.name == 'name':
+                    # before version 5.8
+                    name = attr['name'].string()
+                    break
+                elif field.name == 'battr':
+                    # version 5.8 and later
+                    name = attr['battr']['attr']['name'].string()
+                    break
+            if name is None:
+                raise TypeError("crash-python bug: cannot locate module name field")
             if name == '.text':
                 continue
             out.append("-s {} {:#x}".format(name, int(attr['address'])))
-
         return " ".join(out)
 
     def check_module_version(self, modpath, module):
