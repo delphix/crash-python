@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 
-export PYTHONPATH="/usr/local/lib/python3.6/site-packages:$PYTHONPATH"
 export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
 export PATH="/opt/gdb-python/bin:/usr/local/bin:$PATH"
 
