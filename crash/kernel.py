@@ -138,7 +138,7 @@ class CrashKernel(CrashBaseClass):
             print("vmlinux_debuginfo={}".format(self.vmlinux_debuginfo))
 
         if module_path is None:
-            x = [ "modules" ]
+            x = ["/usr/lib/debug/lib/modules/{}".format(version)]
             x.append("/lib/modules/{}".format(version))
 
             self.module_path = x
