@@ -30,7 +30,7 @@ class ZfsDbgmsg(gdb.Command):
             timestamp = datetime.datetime.fromtimestamp(int(node['zdm_timestamp']))
             print("{}: ".format(timestamp.strftime('%Y-%m-%dT%H:%M:%S')), end="")
 
-        print("{}".format(node['zdm_msg'].string(encoding='utf-8', length=strlen, errors="replace")))
+        print("{}".format(node['zdm_msg'].string(encoding='utf-8', length=strlen, errors="replace").replace('\x00', '')))
 
     def invoke(self, arg : str, from_tty : bool) -> None:
         print(arg)
