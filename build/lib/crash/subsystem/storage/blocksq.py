@@ -1,0 +1,66 @@
+# -*- coding: utf-8 -*-
+# vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
+
+import gdb
+
+from crash.infra import CrashBaseClass, export
+from crash.types.list import list_for_each_entry
+from crash.cache.syscache import kernel
+
+class NoQueueError(RuntimeError):
+    pass
+
+class SingleQueueBlock(CrashBaseClass):
+    __types__ = [ 'struct request' ]
+
+    @export
+    def requests_in_flight(self, queue):
+        """
+        Report how many requests are in flight for this queue
+
+        This method returns a 2-tuple of ints.  The first value
+        is the number of read requests in flight.  The second
+        value is the number of write requests in flight.
+        """
+        return (int(queue['in_flight'][0]),
+                int(queue['in_flight'][1]))
+
+    @export
+    def for_each_request_in_queue(self, queue):
+        """
+        Iterates over each struct request in request_queue
+
+        This method iterates over the request_queue's queuelist and
+        returns a request for each member.
+
+        Args:
+            queue(gdb.Value<struct request_queue>): The struct request_queue
+                used to iterate
+
+        Yields:
+            gdb.Value<struct request>: Each struct request contained within
+               the request_queue's queuelist
+        """
+        if int(queue) == 0:
+            raise NoQueueError("Queue is NULL")
+        return list_for_each_entry(queue['queue_head'], self.request_type,
+                                   'queuelist')
+
+    @export
+    @classmethod
+    def request_age_ms(cls, request):
+        """
+        Returns the age of the request in milliseconds
+
+        This method returns the difference between the current time
+        (jiffies) and the request's start_time, in milliseconds.
+
+        Args:
+            request(gdb.Value<struct request>): The struct request used
+                to determine age
+
+        Returns:
+            int: Difference between the request's start_time and
+                current jiffies in milliseconds.
+        """
+        return kernel.jiffies_to_msec(kernel.jiffies - request['start_time'])

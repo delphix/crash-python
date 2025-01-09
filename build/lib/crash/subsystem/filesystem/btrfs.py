@@ -1,0 +1,65 @@
+# -*- coding: utf-8 -*-
+# vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
+
+import gdb
+
+from crash.infra import CrashBaseClass, export
+from crash.util import decode_uuid, struct_has_member
+
+class BtrfsFileSystem(CrashBaseClass):
+    __types__ = [ 'struct btrfs_inode', 'struct btrfs_fs_info *',
+                  'struct btrfs_fs_info' ]
+
+    @export
+    @classmethod
+    def btrfs_inode(cls, vfs_inode):
+        """
+        Converts a VFS inode to a btrfs inode
+
+        This method converts a struct inode to a struct btrfs_inode.
+
+        Args:
+            vfs_inode (gdb.Value<struct inode>): The struct inode to convert
+                to a struct btrfs_inode
+
+        Returns:
+            gdb.Value<struct btrfs_inode>: The converted struct btrfs_inode
+        """
+        return container_of(vfs_inode, cls.btrfs_inode_type, 'vfs_inode')
+
+    @export
+    @classmethod
+    def btrfs_fs_info(cls, super_block):
+        """
+        Converts a VFS superblock to a btrfs fs_info
+
+        This method converts a struct super_block to a struct btrfs_fs_info
+
+        Args:
+            super_block (gdb.Value<struct super_block>): The struct super_block
+                to convert to a struct btrfs_fs_info.
+
+        Returns:
+            gdb.Value<struct btrfs_fs_info *>: The converted struct
+                btrfs_fs_info
+        """
+        return super_block['s_fs_info'].cast(cls.btrfs_fs_info_p_type)
+
+    @export
+    @classmethod
+    def btrfs_fsid(cls, sb):
+        fs_info = cls.btrfs_fs_info(sb)
+        if struct_has_member(cls.btrfs_fs_info_type, 'fsid'):
+            return decode_uuid(fs_info['fsid'])
+        return decode_uuid(fs_info['fs_devices']['fsid'])
+
+    @export
+    @classmethod
+    def btrfs_metadata_uuid(cls, sb):
+        fs_info = cls.btrfs_fs_info(sb)
+        if struct_has_member(cls.btrfs_fs_info_type, 'metadata_uuid'):
+            return decode_uuid(fs_info['metadata_uuid'])
+        elif struct_has_member(fs_info['fs_devices'].type, 'metadata_uuid'):
+            return decode_uuid(fs_info['fs_devices']['metadata_uuid'])
+        else:
+            return cls.btrfs_fsid(sb)

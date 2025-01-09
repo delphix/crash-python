@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Name: crash
+Version: 0.1
+Summary: Python Linux Kernel Crash dump forensic tools
+Author: Jeff Mahoney
+Author-email: jeffm@suse.com
+License: GPL v2 only
+Requires-Python: >=3.4
+License-File: COPYING
+Requires-Dist: pyelftools
